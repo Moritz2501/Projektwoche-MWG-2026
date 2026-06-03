@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verwaltung - Projektwoche MWG 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            border-radius: 0 !important;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table-glass {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .table-glass thead {
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table-glass tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .table-glass tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(124, 58, 237, 0.5);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(124, 58, 237, 0.5);
+            outline: none;
+        }
+
+        .success-badge {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            border: 1px solid rgba(34, 197, 94, 0.5);
+        }
+
+        .log-action-create {
+            color: #86efac;
+        }
+
+        .log-action-update {
+            color: #fbbf24;
+        }
+
+        .log-action-delete {
+            color: #f87171;
+        }
+
+        .log-action-login {
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../layout.ejs') %>
+</body>
+</html>
+
+<!-- Content -->
+<div>
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-white mb-2">🔧 Verwaltung</h1>
+        <p class="text-gray-400">Systemverwaltung und Benutzermenagement</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-4 mb-8 border-b border-white/10">
+        <button onclick="switchTab('users')" class="tab-btn active px-4 py-2 border-b-2 border-purple-500 text-purple-400">
+            👤 Benutzer
+        </button>
+        <button onclick="switchTab('logs')" class="tab-btn px-4 py-2 text-gray-400 hover:text-white">
+            📋 Systemlogs
+        </button>
+    </div>
+
+    <!-- Users Tab -->
+    <div id="users-tab" class="tab-content">
+        <div class="mb-8">
+            <div class="glass-panel p-6">
+                <h3 class="text-lg font-semibold text-white mb-4">➕ Neuer Benutzer</h3>
+                <form onsubmit="createUser(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">Benutzername</label>
+                        <input type="text" id="newUsername" class="input-field w-full" placeholder="Benutzer..." required>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">Email</label>
+                        <input type="email" id="newEmail" class="input-field w-full" placeholder="email@example.com" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">Rolle</label>
+                        <select id="newRole" class="input-field w-full" required>
+                            <option value="user">User</option>
+                            <option value="bühnentechnik">Bühnentechnik</option>
+                            <option value="projekt-verwaltung">Projekt Verwaltung</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="btn-primary w-full">
+                            ✅ Erstellen
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="glass-panel p-6 overflow-x-auto">
+            <h3 class="text-lg font-semibold text-white mb-4">📊 Benutzer</h3>
+            <% if (users && users.length > 0) { %>
+                <table class="table-glass w-full">
+                    <thead>
+                        <tr class="text-left">
+                            <th class="px-4 py-3 font-semibold">Benutzername</th>
+                            <th class="px-4 py-3 font-semibold">Email</th>
+                            <th class="px-4 py-3 font-semibold">Rolle</th>
+                            <th class="px-4 py-3 font-semibold">Erstellt am</th>
+                            <th class="px-4 py-3 font-semibold">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% users.forEach(user => { %>
+                            <tr>
+                                <td class="px-4 py-3 font-medium text-white"><%= user.username %></td>
+                                <td class="px-4 py-3 text-gray-300"><%= user.email %></td>
+                                <td class="px-4 py-3 capitalize text-purple-300"><%= user.role %></td>
+                                <td class="px-4 py-3 text-gray-300 text-sm">
+                                    <%= new Date(user.createdAt).toLocaleDateString('de-DE') %>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="success-badge">🟢 Aktiv</span>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } else { %>
+                <p class="text-gray-400">Keine Benutzer vorhanden</p>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Logs Tab -->
+    <div id="logs-tab" class="tab-content" style="display: none;">
+        <div class="glass-panel p-6 overflow-x-auto">
+            <h3 class="text-lg font-semibold text-white mb-4">📋 Systemlogs (letzte 100)</h3>
+            <% if (logs && logs.length > 0) { %>
+                <table class="table-glass w-full text-sm">
+                    <thead>
+                        <tr class="text-left">
+                            <th class="px-4 py-3 font-semibold">Zeitstempel</th>
+                            <th class="px-4 py-3 font-semibold">Aktion</th>
+                            <th class="px-4 py-3 font-semibold">Benutzer-ID</th>
+                            <th class="px-4 py-3 font-semibold">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% logs.forEach(log => { %>
+                            <tr>
+                                <td class="px-4 py-3 text-gray-400">
+                                    <%= new Date(log.timestamp).toLocaleString('de-DE') %>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="log-action-<%= log.action.split('_')[0] %>">
+                                        <%= log.action %>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-gray-400 font-mono text-xs">
+                                    <%= log.userId %>
+                                </td>
+                                <td class="px-4 py-3 text-gray-400 text-xs">
+                                    <%= log.details %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } else { %>
+                <p class="text-gray-400">Keine Logs vorhanden</p>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Info Section -->
+    <div class="glass-panel p-6 mt-8">
+        <h3 class="text-lg font-semibold text-white mb-3">ℹ️ System-Informationen</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <p class="text-xs text-gray-400">Gesamtbenutzer</p>
+                <p class="text-3xl font-bold text-purple-300"><%= users ? users.length : 0 %></p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">Systemlogs</p>
+                <p class="text-3xl font-bold text-purple-300"><%= logs ? logs.length : 0 %></p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">Status</p>
+                <p class="text-sm text-green-400">🟢 Online</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">Letzte Aktivität</p>
+                <p class="text-sm text-gray-300">
+                    <% if (logs && logs.length > 0) { %>
+                        <%= new Date(logs[0].timestamp).toLocaleTimeString('de-DE') %>
+                    <% } else { %>
+                        Keine
+                    <% } %>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tab) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('active');
+            b.style.borderColor = 'transparent';
+            b.style.color = '#9ca3af';
+        });
+
+        // Show selected tab
+        document.getElementById(tab + '-tab').style.display = 'block';
+        event.target.classList.add('active');
+        event.target.style.borderColor = '#7c3aed';
+        event.target.style.color = '#a78bfa';
+    }
+
+    async function createUser(event) {
+        event.preventDefault();
+
+        const username = document.getElementById('newUsername').value;
+        const email = document.getElementById('newEmail').value;
+        const role = document.getElementById('newRole').value;
+
+        try {
+            const response = await fetch('/api/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, role })
+            });
+
+            if (response.ok) {
+                const user = await response.json();
+                alert(`Benutzer erstellt!\n\nBenutzername: ${user.username}\nTemporäres Passwort: ${user.tempPassword}`);
+                location.reload();
+            } else {
+                const error = await response.json();
+                alert('Fehler: ' + error.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten');
+        }
+    }
+</script>

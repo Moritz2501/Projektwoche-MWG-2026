@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Projektwoche MWG 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            border-radius: 0 !important;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-link {
+            color: #a78bfa;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .card-link:hover {
+            color: #c4b5fd;
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+<body>
+    <%- include('../layout.ejs') %>
+</body>
+</html>
+
+<!-- Content -->
+<div>
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-white mb-2">
+            👋 Willkommen zurück, <%= user.username %>!
+        </h1>
+        <p class="text-gray-400">
+            Übersicht und schneller Zugriff auf alle Funktionen
+        </p>
+    </div>
+
+    <% if (user.role === 'admin' || user.role === 'projekt-verwaltung') { %>
+        <!-- Admin Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <a href="/projekte" class="dashboard-card no-underline">
+                <div class="card-icon">📋</div>
+                <h2 class="text-xl font-bold text-white mb-2">Projekte</h2>
+                <p class="text-gray-300 text-sm mb-4">
+                    Verwalte und organisiere alle Schulprojekte
+                </p>
+                <span class="card-link">Zu den Projekten →</span>
+            </a>
+
+            <a href="/zeitplan" class="dashboard-card no-underline">
+                <div class="card-icon">⏰</div>
+                <h2 class="text-xl font-bold text-white mb-2">Zeitplan</h2>
+                <p class="text-gray-300 text-sm mb-4">
+                    Erstelle und bearbeite Zeitplan-Slots
+                </p>
+                <span class="card-link">Zum Zeitplan →</span>
+            </a>
+
+            <a href="/verwaltung" class="dashboard-card no-underline">
+                <div class="card-icon">🔧</div>
+                <h2 class="text-xl font-bold text-white mb-2">Verwaltung</h2>
+                <p class="text-gray-300 text-sm mb-4">
+                    Verwalte Benutzer und Systemlogs
+                </p>
+                <span class="card-link">Zur Verwaltung →</span>
+            </a>
+        </div>
+    <% } %>
+
+    <% if (user.role === 'bühnentechnik') { %>
+        <!-- Stage Tech Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <a href="/zeitplan" class="dashboard-card no-underline">
+                <div class="card-icon">⏰</div>
+                <h2 class="text-xl font-bold text-white mb-2">Zeitplan</h2>
+                <p class="text-gray-300 text-sm mb-4">
+                    Verwende und verwalte Bühnenzeit-Slots
+                </p>
+                <span class="card-link">Zum Zeitplan →</span>
+            </a>
+
+            <a href="/gelande" class="dashboard-card no-underline">
+                <div class="card-icon">🗺️</div>
+                <h2 class="text-xl font-bold text-white mb-2">Gelände</h2>
+                <p class="text-gray-300 text-sm mb-4">
+                    Verwalte die Bühne und Stände
+                </p>
+                <span class="card-link">Zum Gelände →</span>
+            </a>
+        </div>
+    <% } %>
+
+    <!-- Universal Dashboard Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="/projekte" class="dashboard-card no-underline">
+            <div class="card-icon">📊</div>
+            <h2 class="text-xl font-bold text-white mb-2">Projekte</h2>
+            <p class="text-gray-300 text-sm mb-4">
+                Übersicht aller teilnehmenden Projekte
+            </p>
+            <span class="card-link">Projekte anschauen →</span>
+        </a>
+
+        <a href="/zeitplan" class="dashboard-card no-underline">
+            <div class="card-icon">📅</div>
+            <h2 class="text-xl font-bold text-white mb-2">Zeitplan</h2>
+            <p class="text-gray-300 text-sm mb-4">
+                Aktuelle Zeitplanungs-Informationen
+            </p>
+            <span class="card-link">Zeitplan anschauen →</span>
+        </a>
+
+        <a href="/gelande" class="dashboard-card no-underline">
+            <div class="card-icon">🗺️</div>
+            <h2 class="text-xl font-bold text-white mb-2">Gelände</h2>
+            <p class="text-gray-300 text-sm mb-4">
+                Visualisierung der Standaufteilung
+            </p>
+            <span class="card-link">Gelände anschauen →</span>
+        </a>
+
+        <a href="/kanban" class="dashboard-card no-underline">
+            <div class="card-icon">📌</div>
+            <h2 class="text-xl font-bold text-white mb-2">Kanban</h2>
+            <p class="text-gray-300 text-sm mb-4">
+                Verwende Aufgaben-Management-System
+            </p>
+            <span class="card-link">Kanban öffnen →</span>
+        </a>
+    </div>
+
+    <!-- System Info -->
+    <div class="glass-panel p-6 mt-8">
+        <h3 class="text-lg font-semibold text-white mb-3">📋 Systeminformationen</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <p class="text-xs text-gray-400">Deine Rolle</p>
+                <p class="text-sm font-semibold text-purple-300 capitalize"><%= user.role %></p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">Benutzername</p>
+                <p class="text-sm font-semibold text-gray-200"><%= user.username %></p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">System</p>
+                <p class="text-sm font-semibold text-gray-200">MWG 2026</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">Status</p>
+                <p class="text-sm font-semibold text-green-400">🟢 Online</p>
+            </div>
+        </div>
+    </div>
+</div>

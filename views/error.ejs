@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fehler - Projektwoche MWG 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            border-radius: 0 !important;
+        }
+
+        :root {
+            --color-dark-base: #0a0f1e;
+            --color-deep-purple: #2d0a4e;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--color-dark-base) 0%, #1a1f3a 50%, var(--color-deep-purple) 100%);
+            color: #e5e7eb;
+            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(124, 58, 237, 0.5);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full">
+            <div class="glass-panel p-12 text-center">
+                <div class="text-6xl mb-4">⚠️</div>
+                <h1 class="text-4xl font-bold text-red-400 mb-2">Fehler</h1>
+                <p class="text-gray-300 text-lg mb-8">
+                    <%= message || 'Ein Fehler ist aufgetreten' %>
+                </p>
+                <div class="flex gap-4">
+                    <a href="/" class="btn-primary flex-1 text-center">
+                        🏠 Startseite
+                    </a>
+                    <a href="/dashboard" class="glass-panel px-4 py-3 text-gray-300 hover:text-white block flex-1 text-center">
+                        📊 Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

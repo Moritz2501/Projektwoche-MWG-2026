@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmelden - Projektwoche MWG 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            border-radius: 0 !important;
+        }
+
+        :root {
+            --color-dark-base: #0a0f1e;
+            --color-deep-purple: #2d0a4e;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--color-dark-base) 0%, #1a1f3a 50%, var(--color-deep-purple) 100%);
+            color: #e5e7eb;
+            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(124, 58, 237, 0.5);
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(124, 58, 237, 0.5);
+            outline: none;
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+        }
+
+        .input-field::placeholder {
+            color: rgba(229, 231, 235, 0.4);
+        }
+
+        .error-alert {
+            background: rgba(220, 38, 38, 0.2);
+            border: 1px solid rgba(220, 38, 38, 0.5);
+            color: #fca5a5;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <!-- Logo/Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600 mb-2">
+                    MWG 2026
+                </h1>
+                <p class="text-gray-300">Projektwoche Verwaltungssystem</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="glass-panel p-8">
+                <h2 class="text-2xl font-bold text-white mb-6">Anmelden</h2>
+
+                <% if (error) { %>
+                    <div class="error-alert">
+                        <%= error %>
+                    </div>
+                <% } %>
+
+                <form method="POST" action="/login" class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-300 mb-2">
+                            Benutzername
+                        </label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            class="input-field"
+                            placeholder="Benutzername eingeben"
+                            required
+                            autofocus
+                        >
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+                            Passwort
+                        </label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="input-field"
+                            placeholder="Passwort eingeben"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn-primary mt-6">
+                        🔓 Anmelden
+                    </button>
+                </form>
+            </div>
+
+            <!-- Footer Info -->
+            <div class="text-center mt-6">
+                <p class="text-sm text-gray-400">
+                    <a href="/" class="text-purple-400 hover:text-purple-300">← Zur Startseite</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

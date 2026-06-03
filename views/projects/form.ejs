@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= project ? 'Projekt bearbeiten' : 'Neues Projekt' %> - Projektwoche MWG 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            border-radius: 0 !important;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(124, 58, 237, 0.5);
+            outline: none;
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(124, 58, 237, 0.5);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+        }
+
+        textarea.input-field {
+            resize: vertical;
+            min-height: 120px;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../layout.ejs') %>
+</body>
+</html>
+
+<!-- Content -->
+<div>
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-white mb-2">
+            <% if (project) { %>
+                ✏️ Projekt bearbeiten
+            <% } else { %>
+                ➕ Neues Projekt
+            <% } %>
+        </h1>
+        <p class="text-gray-400">Fülle die Projektdetails aus</p>
+    </div>
+
+    <div class="max-w-2xl">
+        <div class="glass-panel p-8">
+            <form onsubmit="submitForm(event)">
+                <div class="space-y-6">
+                    <!-- Project Name -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-300 mb-2">
+                            Projektname *
+                        </label>
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            class="input-field"
+                            placeholder="z.B. Robotik-Projekt"
+                            value="<%= project ? project.name : '' %>"
+                            required
+                        >
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-300 mb-2">
+                            Beschreibung *
+                        </label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            class="input-field"
+                            placeholder="Kurze Beschreibung des Projekts..."
+                            required
+                        ><%= project ? project.description : '' %></textarea>
+                    </div>
+
+                    <!-- Supervisors -->
+                    <div>
+                        <label for="supervisors" class="block text-sm font-medium text-gray-300 mb-2">
+                            Betreuer (durch Komma getrennt)
+                        </label>
+                        <input
+                            type="text"
+                            id="supervisors"
+                            name="supervisors"
+                            class="input-field"
+                            placeholder="z.B. Herr Müller, Frau Schmidt"
+                            value="<%= project ? project.supervisors.join(', ') : '' %>"
+                        >
+                    </div>
+
+                    <!-- Member Count -->
+                    <div>
+                        <label for="memberCount" class="block text-sm font-medium text-gray-300 mb-2">
+                            Anzahl Teilnehmer
+                        </label>
+                        <input
+                            type="number"
+                            id="memberCount"
+                            name="memberCount"
+                            class="input-field"
+                            placeholder="z.B. 5"
+                            value="<%= project ? project.memberCount : '1' %>"
+                            min="1"
+                        >
+                    </div>
+
+                    <!-- Presentation Type -->
+                    <div>
+                        <label for="presentationType" class="block text-sm font-medium text-gray-300 mb-2">
+                            Präsentationsart *
+                        </label>
+                        <select id="presentationType" name="presentationType" class="input-field">
+                            <option value="booth" <%= project && project.presentationType === 'booth' ? 'selected' : '' %>>
+                                🏪 Stand
+                            </option>
+                            <option value="stage-time-slot" <%= project && project.presentationType === 'stage-time-slot' ? 'selected' : '' %>>
+                                🎭 Bühnen-Zeitslot
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="mt-8 flex gap-4">
+                    <button type="submit" class="btn-primary">
+                        <% if (project) { %>
+                            💾 Aktualisieren
+                        <% } else { %>
+                            ✅ Erstellen
+                        <% } %>
+                    </button>
+                    <a href="/projekte" class="glass-panel px-6 py-3 text-gray-300 hover:text-white block text-center">
+                        ❌ Abbrechen
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function submitForm(event) {
+        event.preventDefault();
+
+        const formData = {
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+            supervisors: document.getElementById('supervisors').value,
+            memberCount: document.getElementById('memberCount').value,
+            presentationType: document.getElementById('presentationType').value
+        };
+
+        try {
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                alert('Projekt erfolgreich erstellt!');
+                window.location.href = '/projekte';
+            } else {
+                const error = await response.json();
+                alert('Fehler: ' + error.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten');
+        }
+    }
+</script>

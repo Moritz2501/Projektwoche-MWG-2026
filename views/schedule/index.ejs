@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeitplan - Projektwoche MWG 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            border-radius: 0 !important;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(124, 58, 237, 0.5);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(124, 58, 237, 0.5);
+            outline: none;
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+        }
+
+        .slot-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            cursor: grab;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .slot-card:active {
+            cursor: grabbing;
+            opacity: 0.7;
+        }
+
+        .slot-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+        }
+
+        .time-badge {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            padding: 0.5rem 1rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../layout.ejs') %>
+</body>
+</html>
+
+<!-- Content -->
+<div>
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-4xl font-bold text-white mb-2">⏰ Zeitplan</h1>
+            <p class="text-gray-400">Verwalte und bearbeite die Zeitplan-Slots</p>
+        </div>
+        <button onclick="showCreateForm()" class="btn-primary">
+            ➕ Neuer Slot
+        </button>
+    </div>
+
+    <!-- Create Form (Hidden) -->
+    <div id="createForm" class="glass-panel p-6 mb-8" style="display: none;">
+        <h3 class="text-lg font-semibold text-white mb-4">Neuer Zeitplan-Slot</h3>
+        <form onsubmit="createSlot(event)">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-300 mb-2">Zeit</label>
+                    <input type="time" id="slotTime" class="input-field w-full" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-2">Dauer (Minuten)</label>
+                    <input type="number" id="slotDuration" class="input-field w-full" value="30" min="5" max="240">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-2">Projekt</label>
+                    <select id="slotProject" class="input-field w-full">
+                        <option value="">- Kein Projekt -</option>
+                        <% projects.forEach(p => { %>
+                            <option value="<%= p.id %>"><%= p.name %></option>
+                        <% }); %>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-2">
+                <button type="submit" class="btn-primary">💾 Erstellen</button>
+                <button type="button" onclick="hideCreateForm()" class="glass-panel px-4 py-2 text-gray-300 hover:text-white">
+                    ❌ Abbrechen
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Slots List (Draggable) -->
+    <% if (slots && slots.length > 0) { %>
+        <div id="slotsList" class="mb-8">
+            <h3 class="text-lg font-semibold text-white mb-4">Zeitplan-Slots</h3>
+            <div class="bg-gray-800/20 border border-gray-700 p-4 rounded-none">
+                <% slots.forEach((slot, index) => {
+                    const project = projects.find(p => p.id === slot.projectId);
+                %>
+                    <div class="slot-card" draggable="true" data-slot-id="<%= slot.id %>" data-order="<%= slot.order %>">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="time-badge">
+                                    ⏰ <%= slot.time %> (<%= slot.duration %> min)
+                                </div>
+                                <% if (project) { %>
+                                    <h4 class="text-white font-semibold mt-2"><%= project.name %></h4>
+                                <% } else { %>
+                                    <p class="text-gray-400 italic mt-2">Kein Projekt zugeordnet</p>
+                                <% } %>
+                            </div>
+                            <span class="text-gray-500 text-xs">📌 Ziehe zum Sortieren</span>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+
+        <!-- Reorder Controls -->
+        <div class="glass-panel p-4 text-center">
+            <button onclick="saveOrder()" class="btn-primary">
+                💾 Reihenfolge speichern
+            </button>
+        </div>
+    <% } else { %>
+        <div class="glass-panel p-12 text-center">
+            <p class="text-gray-400 text-lg mb-4">
+                📭 Noch keine Zeitplan-Slots vorhanden
+            </p>
+            <button onclick="showCreateForm()" class="btn-primary">
+                ➕ Ersten Slot erstellen
+            </button>
+        </div>
+    <% } %>
+</div>
+
+<script>
+    function showCreateForm() {
+        document.getElementById('createForm').style.display = 'block';
+        document.getElementById('slotTime').focus();
+    }
+
+    function hideCreateForm() {
+        document.getElementById('createForm').style.display = 'none';
+    }
+
+    async function createSlot(event) {
+        event.preventDefault();
+        
+        const time = document.getElementById('slotTime').value;
+        const duration = document.getElementById('slotDuration').value;
+        const projectId = document.getElementById('slotProject').value;
+
+        try {
+            const response = await fetch('/api/schedule/slots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    time,
+                    duration: parseInt(duration),
+                    projectId: projectId || null
+                })
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Fehler beim Erstellen des Slots');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten');
+        }
+    }
+
+    async function saveOrder() {
+        const slots = document.querySelectorAll('.slot-card');
+        const orderedSlots = Array.from(slots).map((card, index) => ({
+            id: card.dataset.slotId,
+            order: index + 1
+        }));
+
+        try {
+            const response = await fetch('/api/schedule/reorder', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slots: orderedSlots })
+            });
+
+            if (response.ok) {
+                alert('Reihenfolge gespeichert!');
+            } else {
+                alert('Fehler beim Speichern');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten');
+        }
+    }
+
+    // Drag and drop
+    let draggedElement = null;
+
+    document.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('slot-card')) {
+            draggedElement = e.target;
+            e.target.style.opacity = '0.5';
+        }
+    });
+
+    document.addEventListener('dragend', (e) => {
+        if (e.target.classList.contains('slot-card')) {
+            e.target.style.opacity = '1';
+        }
+    });
+
+    document.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (e.target.classList.contains('slot-card') && draggedElement !== e.target) {
+            e.target.parentNode.insertBefore(draggedElement, e.target);
+        }
+    });
+</script>

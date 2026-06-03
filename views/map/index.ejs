@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gelände - Projektwoche MWG 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            border-radius: 0 !important;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #mapCanvas {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px solid rgba(124, 58, 237, 0.3);
+            cursor: grab;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(124, 58, 237, 0.5);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+        }
+
+        .booth-item {
+            background: rgba(59, 130, 246, 0.3);
+            border: 2px solid #3b82f6;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            cursor: grab;
+            transition: all 0.3s ease;
+        }
+
+        .booth-item:hover {
+            background: rgba(59, 130, 246, 0.5);
+            transform: translateX(4px);
+        }
+
+        .booth-item.active {
+            background: rgba(168, 85, 247, 0.4);
+            border-color: #a855f7;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../layout.ejs') %>
+</body>
+</html>
+
+<!-- Content -->
+<div>
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-white mb-2">🗺️ Gelände</h1>
+        <p class="text-gray-400">Verwalte Stände und Bühne auf dem Gelände</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Booths List -->
+        <div class="lg:col-span-1">
+            <div class="glass-panel p-6">
+                <h3 class="text-lg font-semibold text-white mb-4">📍 Stände</h3>
+                <div id="boothsList" class="space-y-2 max-h-96 overflow-y-auto">
+                    <% if (projects && projects.length > 0) { %>
+                        <% projects.forEach(project => { %>
+                            <div class="booth-item" draggable="true" data-project-id="<%= project.id %>">
+                                <p class="text-sm font-medium text-white"><%= project.name %></p>
+                                <p class="text-xs text-gray-400"><%= project.memberCount %> Personen</p>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p class="text-sm text-gray-400">Keine Projekte vorhanden</p>
+                    <% } %>
+                </div>
+                <div class="mt-4 pt-4 border-t border-white/10">
+                    <p class="text-xs text-gray-400">
+                        ℹ️ Ziehe Stände auf die Karte links
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Canvas -->
+        <div class="lg:col-span-3">
+            <div class="glass-panel p-6">
+                <h3 class="text-lg font-semibold text-white mb-4">🏗️ Gelände-Layout</h3>
+                <canvas id="mapCanvas" width="800" height="600" class="w-full border border-purple-500/30"></canvas>
+                
+                <div class="mt-4 flex gap-2">
+                    <button onclick="saveGrounds()" class="btn-primary">
+                        💾 Speichern
+                    </button>
+                    <button onclick="clearMap()" class="glass-panel px-4 py-2 text-gray-300 hover:text-white">
+                        🔄 Zurücksetzen
+                    </button>
+                </div>
+                
+                <div class="mt-4 p-4 bg-gray-800/30 border border-gray-700">
+                    <p class="text-xs text-gray-400">
+                        💡 Hinweis: Dies ist eine interaktive Visualisierung des Gelände-Layouts. 
+                        Ziehe Stände und die Bühne, um sie zu positionieren.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="glass-panel p-6 mt-8">
+        <h3 class="text-lg font-semibold text-white mb-3">📖 Anleitung</h3>
+        <ul class="text-sm text-gray-300 space-y-2">
+            <li>✓ Ziehe Stände aus der Liste auf die Karte</li>
+            <li>✓ Klicke und ziehe Elemente auf der Karte, um sie zu verschieben</li>
+            <li>✓ Nutze die Größen-Regler zum Anpassen von Dimensionen</li>
+            <li>✓ Klicke auf "Speichern", um dein Layout zu speichern</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('mapCanvas');
+    const ctx = canvas.getContext('2d');
+    let booths = <%= JSON.stringify(grounds.booths || []) %>;
+    let stage = <%= JSON.stringify(grounds.stage || null) %>;
+    let selectedElement = null;
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    function drawMap() {
+        ctx.fillStyle = 'rgba(10, 15, 30, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(124, 58, 237, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+        // Draw booths
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 2;
+        booths.forEach(booth => {
+            ctx.fillRect(booth.x, booth.y, booth.width, booth.height);
+            ctx.strokeRect(booth.x, booth.y, booth.width, booth.height);
+            ctx.fillStyle = 'white';
+            ctx.font = '12px sans-serif';
+            ctx.fillText(booth.name, booth.x + 5, booth.y + 20);
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
+        });
+
+        // Draw stage
+        if (stage) {
+            ctx.fillStyle = 'rgba(168, 85, 247, 0.5)';
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 3;
+            ctx.fillRect(stage.x, stage.y, stage.width, stage.height);
+            ctx.strokeRect(stage.x, stage.y, stage.width, stage.height);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('BÜHNE', stage.x + 5, stage.y + 25);
+        }
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Check stage
+        if (stage && x > stage.x && x < stage.x + stage.width && 
+            y > stage.y && y < stage.y + stage.height) {
+            selectedElement = stage;
+            isDragging = true;
+            dragOffsetX = x - stage.x;
+            dragOffsetY = y - stage.y;
+            return;
+        }
+
+        // Check booths
+        for (let booth of booths) {
+            if (x > booth.x && x < booth.x + booth.width && 
+                y > booth.y && y < booth.y + booth.height) {
+                selectedElement = booth;
+                isDragging = true;
+                dragOffsetX = x - booth.x;
+                dragOffsetY = y - booth.y;
+                return;
+            }
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDragging || !selectedElement) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        selectedElement.x = Math.max(0, Math.min(x - dragOffsetX, canvas.width - selectedElement.width));
+        selectedElement.y = Math.max(0, Math.min(y - dragOffsetY, canvas.height - selectedElement.height));
+
+        drawMap();
+    });
+
+    canvas.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    canvas.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    });
+
+    canvas.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const projectId = e.dataTransfer.getData('text/plain');
+
+        // Find project name
+        const boothItem = document.querySelector(`[data-project-id="${projectId}"]`);
+        if (boothItem) {
+            const projectName = boothItem.querySelector('p:first-child').textContent;
+            booths.push({
+                projectId,
+                name: projectName,
+                x: Math.max(0, x - 50),
+                y: Math.max(0, y - 25),
+                width: 100,
+                height: 50
+            });
+            drawMap();
+        }
+    });
+
+    document.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('booth-item')) {
+            e.dataTransfer.setData('text/plain', e.target.dataset.projectId);
+        }
+    });
+
+    function saveGrounds() {
+        fetch('/api/grounds', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ booths, stage })
+        }).then(r => {
+            if (r.ok) alert('Gelände gespeichert!');
+        }).catch(e => alert('Fehler: ' + e));
+    }
+
+    function clearMap() {
+        booths = [];
+        stage = null;
+        drawMap();
+    }
+
+    // Initial draw
+    drawMap();
+</script>
