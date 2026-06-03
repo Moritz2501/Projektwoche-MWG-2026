@@ -2,22 +2,47 @@ import serverless from 'serverless-http';
 import { app, initializeAdmin } from '../server.js';
 
 let initialized = false;
+let initPromise = null;
 
-// Initialize once on cold start
+// Initialize once with timeout protection
 async function ensureInit() {
-  if (!initialized) {
-    try {
-      await initializeAdmin();
-      initialized = true;
-    } catch (err) {
-      console.error('Failed to initialize:', err);
-      throw err;
-    }
+  if (initialized) {
+    return; // Already done
+  }
+
+  if (initPromise) {
+    return await Promise.race([
+      initPromise,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Init timeout')), 5000)
+      )
+    ]);
+  }
+
+  initPromise = initializeAdmin();
+  
+  try {
+    await Promise.race([
+      initPromise,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Init timeout')), 5000)
+      )
+    ]);
+    initialized = true;
+  } catch (err) {
+    console.error('Initialization error:', err.message);
+    // Don't throw - allow app to continue
   }
 }
 
-// Initialize on import
-await ensureInit();
-
-// Wrap Express app for Vercel
-export default serverless(app);
+// Create wrapped handler that initializes on first request
+export default async (req, res) => {
+  try {
+    await ensureInit();
+    return serverless(app)(req, res);
+  } catch (err) {
+    console.error('Handler error:', err);
+    res.statusCode = 500;
+    res.end('Internal Server Error');
+  }
+};

@@ -1,9 +1,39 @@
-/**
- * Session Handler Middleware
- * Configures secure session settings
- */
+import session from 'express-session';
+
+// Create a simple in-memory store with warning suppression for serverless
+class SimpleSessionStore extends session.Store {
+  constructor() {
+    super();
+    this.sessions = {};
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('Using in-memory session store on Vercel. Sessions may be lost on redeployment.');
+    }
+  }
+
+  get(sid, callback) {
+    const sess = this.sessions[sid];
+    if (sess) {
+      callback(null, sess);
+    } else {
+      callback(null, null);
+    }
+  }
+
+  set(sid, sess, callback) {
+    this.sessions[sid] = sess;
+    callback(null);
+  }
+
+  destroy(sid, callback) {
+    delete this.sessions[sid];
+    callback(null);
+  }
+}
 
 export const sessionConfig = {
+  store: process.env.NODE_ENV === 'production' 
+    ? new SimpleSessionStore()
+    : undefined,
   secret: process.env.SESSION_SECRET || 'your-secure-random-secret',
   resave: false,
   saveUninitialized: false,
