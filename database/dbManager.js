@@ -8,23 +8,56 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SOURCE_DATA_DIR = path.join(__dirname, 'data');
 const TEMP_DATA_DIR = path.join('/tmp', 'projektwoche-mwg-2026-data');
-const DATA_DIR = process.env.VERCEL === '1' ? TEMP_DATA_DIR : SOURCE_DATA_DIR;
 
-// Ensure data directory exists and copy source fixtures into /tmp on Vercel if needed
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+function ensureDirectory(dir) {
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
 
-  if (DATA_DIR !== SOURCE_DATA_DIR && fs.existsSync(SOURCE_DATA_DIR)) {
-    const sourceFiles = fs.readdirSync(SOURCE_DATA_DIR).filter(file => file.endsWith('.json'));
-    for (const file of sourceFiles) {
-      const srcPath = path.join(SOURCE_DATA_DIR, file);
-      const destPath = path.join(DATA_DIR, file);
-      if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
-        fs.copyFileSync(srcPath, destPath);
-      }
+function copySourceFiles(destDir) {
+  if (!fs.existsSync(SOURCE_DATA_DIR)) {
+    return;
+  }
+
+  const sourceFiles = fs.readdirSync(SOURCE_DATA_DIR).filter(file => file.endsWith('.json'));
+  for (const file of sourceFiles) {
+    const srcPath = path.join(SOURCE_DATA_DIR, file);
+    const destPath = path.join(destDir, file);
+    if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
+      fs.copyFileSync(srcPath, destPath);
     }
   }
 }
+
+function chooseDataDir() {
+  const preferTemp = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+
+  if (preferTemp) {
+    if (ensureDirectory(TEMP_DATA_DIR)) {
+      copySourceFiles(TEMP_DATA_DIR);
+      return TEMP_DATA_DIR;
+    }
+  }
+
+  if (ensureDirectory(SOURCE_DATA_DIR)) {
+    return SOURCE_DATA_DIR;
+  }
+
+  if (ensureDirectory(TEMP_DATA_DIR)) {
+    copySourceFiles(TEMP_DATA_DIR);
+    return TEMP_DATA_DIR;
+  }
+
+  throw new Error(`Unable to initialize data storage. Tried directories: ${SOURCE_DATA_DIR} and ${TEMP_DATA_DIR}`);
+}
+
+const DATA_DIR = chooseDataDir();
 
 /**
  * Database Manager for encrypted JSON storage
