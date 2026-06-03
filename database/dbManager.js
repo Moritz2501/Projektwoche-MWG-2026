@@ -6,11 +6,24 @@ import { hashPassword, comparePassword } from '../utils/passwordHelper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, 'data');
+const SOURCE_DATA_DIR = path.join(__dirname, 'data');
+const TEMP_DATA_DIR = path.join('/tmp', 'projektwoche-mwg-2026-data');
+const DATA_DIR = process.env.VERCEL === '1' ? TEMP_DATA_DIR : SOURCE_DATA_DIR;
 
-// Ensure data directory exists
+// Ensure data directory exists and copy source fixtures into /tmp on Vercel if needed
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+
+  if (DATA_DIR !== SOURCE_DATA_DIR && fs.existsSync(SOURCE_DATA_DIR)) {
+    const sourceFiles = fs.readdirSync(SOURCE_DATA_DIR).filter(file => file.endsWith('.json'));
+    for (const file of sourceFiles) {
+      const srcPath = path.join(SOURCE_DATA_DIR, file);
+      const destPath = path.join(DATA_DIR, file);
+      if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    }
+  }
 }
 
 /**
@@ -18,6 +31,15 @@ if (!fs.existsSync(DATA_DIR)) {
  */
 class DatabaseManager {
   constructor(encryptionKey) {
+    if (!encryptionKey || typeof encryptionKey !== 'string') {
+      throw new Error('Missing ENCRYPTION_KEY. Set ENCRYPTION_KEY in the environment.');
+    }
+
+    const keyBuffer = Buffer.from(encryptionKey, 'hex');
+    if (keyBuffer.length !== 32) {
+      throw new Error('ENCRYPTION_KEY must be a 32-byte hex string.');
+    }
+
     this.encryptionKey = encryptionKey;
   }
 
