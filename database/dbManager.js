@@ -1,13 +1,21 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { Pool } from 'pg';
 import { encryptData, decryptData } from '../utils/encryption.js';
-import { hashPassword, comparePassword } from '../utils/passwordHelper.js';
+import { hashPassword } from '../utils/passwordHelper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SOURCE_DATA_DIR = path.join(__dirname, 'data');
 const TEMP_DATA_DIR = path.join('/tmp', 'projektwoche-mwg-2026-data');
+const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || '';
+const pool = connectionString
+  ? new Pool({
+      connectionString,
+      ssl: { rejectUnauthorized: false }
+    })
+  : null;
 
 function ensureDirectory(dir) {
   try {
@@ -38,11 +46,9 @@ function copySourceFiles(destDir) {
 function chooseDataDir() {
   const preferTemp = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
-  if (preferTemp) {
-    if (ensureDirectory(TEMP_DATA_DIR)) {
-      copySourceFiles(TEMP_DATA_DIR);
-      return TEMP_DATA_DIR;
-    }
+  if (preferTemp && ensureDirectory(TEMP_DATA_DIR)) {
+    copySourceFiles(TEMP_DATA_DIR);
+    return TEMP_DATA_DIR;
   }
 
   if (ensureDirectory(SOURCE_DATA_DIR)) {
@@ -59,73 +65,61 @@ function chooseDataDir() {
 
 const DATA_DIR = chooseDataDir();
 
-/**
- * Database Manager for encrypted JSON storage
- */
+function readJsonFileSync(filename) {
+  const filePath = path.join(DATA_DIR, `${filename}.json`);
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+  const encrypted = fs.readFileSync(filePath, 'utf-8');
+  return decryptData(encrypted, this.encryptionKey);
+}
+
+function writeJsonFileSync(filename, data) {
+  const filePath = path.join(DATA_DIR, `${filename}.json`);
+  const encrypted = encryptData(data, this.encryptionKey);
+  fs.writeFileSync(filePath, encrypted, 'utf-8');
+}
+
 class DatabaseManager {
   constructor(encryptionKey) {
-    if (!encryptionKey || typeof encryptionKey !== 'string') {
-      throw new Error('Missing ENCRYPTION_KEY. Set ENCRYPTION_KEY in the environment.');
-    }
+    this.pool = pool;
+    this.useNeon = !!this.pool;
 
-    const keyBuffer = Buffer.from(encryptionKey, 'hex');
-    if (keyBuffer.length !== 32) {
-      throw new Error('ENCRYPTION_KEY must be a 32-byte hex string.');
+    if (!this.useNeon) {
+      if (!encryptionKey || typeof encryptionKey !== 'string') {
+        throw new Error('Missing ENCRYPTION_KEY. Set ENCRYPTION_KEY in the environment.');
+      }
+      const keyBuffer = Buffer.from(encryptionKey, 'hex');
+      if (keyBuffer.length !== 32) {
+        throw new Error('ENCRYPTION_KEY must be a 32-byte hex string.');
+      }
     }
 
     this.encryptionKey = encryptionKey;
   }
 
-  /**
-   * Read encrypted JSON file
-   * @param {string} filename - Filename (without extension)
-   * @returns {Object} Decrypted data
-   */
-  readFile(filename) {
-    try {
-      const filePath = path.join(DATA_DIR, `${filename}.json`);
-      
-      if (!fs.existsSync(filePath)) {
-        return null;
-      }
-
-      const encrypted = fs.readFileSync(filePath, 'utf-8');
-      return decryptData(encrypted, this.encryptionKey);
-    } catch (error) {
-      console.error(`Error reading ${filename}:`, error.message);
-      throw error;
+  async query(text, params = []) {
+    if (!this.pool) {
+      throw new Error('No database connection configured');
     }
+    return this.pool.query(text, params);
   }
 
-  /**
-   * Write encrypted JSON file
-   * @param {string} filename - Filename (without extension)
-   * @param {Object} data - Data to encrypt and write
-   */
-  writeFile(filename, data) {
-    try {
-      const filePath = path.join(DATA_DIR, `${filename}.json`);
-      const encrypted = encryptData(data, this.encryptionKey);
-      fs.writeFileSync(filePath, encrypted, 'utf-8');
-    } catch (error) {
-      console.error(`Error writing ${filename}:`, error.message);
-      throw error;
+  async initializeDefaults() {
+    if (this.useNeon) {
+      await this.createTables();
+      return;
     }
-  }
 
-  /**
-   * Initialize default data structure
-   */
-  initializeDefaults() {
     try {
       // Initialize users
-      if (!this.readFile('users')) {
+      if (!readJsonFileSync.call(this, 'users')) {
         const users = {
           users: [
             {
               id: 'admin-001',
               username: process.env.ADMIN_USER || 'admin',
-              passwordHash: null, // Will be set during startup
+              passwordHash: null,
               email: 'admin@mwg.local',
               role: 'admin',
               createdAt: new Date().toISOString(),
@@ -133,97 +127,219 @@ class DatabaseManager {
             }
           ]
         };
-        this.writeFile('users', users);
+        writeJsonFileSync.call(this, 'users', users);
       }
 
-      // Initialize projects
-      if (!this.readFile('projects')) {
-        this.writeFile('projects', { projects: [] });
+      if (!readJsonFileSync.call(this, 'projects')) {
+        writeJsonFileSync.call(this, 'projects', { projects: [] });
       }
 
-      // Initialize schedule
-      if (!this.readFile('schedule')) {
-        this.writeFile('schedule', { slots: [] });
+      if (!readJsonFileSync.call(this, 'schedule')) {
+        writeJsonFileSync.call(this, 'schedule', { slots: [] });
       }
 
-      // Initialize map/grounds
-      if (!this.readFile('grounds')) {
-        this.writeFile('grounds', {
-          booths: [],
-          stage: null
-        });
+      if (!readJsonFileSync.call(this, 'grounds')) {
+        writeJsonFileSync.call(this, 'grounds', { booths: [], stage: null });
       }
 
-      // Initialize kanban tasks
-      if (!this.readFile('kanban')) {
-        this.writeFile('kanban', {
-          tasks: []
-        });
+      if (!readJsonFileSync.call(this, 'kanban')) {
+        writeJsonFileSync.call(this, 'kanban', { tasks: [] });
       }
 
-      // Initialize logs
-      if (!this.readFile('logs')) {
-        this.writeFile('logs', { logs: [] });
+      if (!readJsonFileSync.call(this, 'logs')) {
+        writeJsonFileSync.call(this, 'logs', { logs: [] });
       }
     } catch (error) {
       console.error('Error initializing database:', error.message);
     }
   }
 
+  async createTables() {
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT,
+        email TEXT,
+        role TEXT,
+        created_at TIMESTAMPTZ NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL,
+        must_change_password BOOLEAN DEFAULT FALSE
+      )
+    `);
+
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        supervisors JSONB,
+        member_count INTEGER DEFAULT 0,
+        presentation_type TEXT,
+        created_at TIMESTAMPTZ NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL
+      )
+    `);
+
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS schedule (
+        id TEXT PRIMARY KEY,
+        time TEXT,
+        duration INTEGER DEFAULT 30,
+        project_id TEXT,
+        order_num INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL
+      )
+    `);
+
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS grounds (
+        id TEXT PRIMARY KEY,
+        booths JSONB,
+        stage JSONB,
+        updated_at TIMESTAMPTZ NOT NULL
+      )
+    `);
+
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS kanban (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        column TEXT,
+        order_num INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL,
+        created_by TEXT
+      )
+    `);
+
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS logs (
+        id TEXT PRIMARY KEY,
+        action TEXT,
+        user_id TEXT,
+        details TEXT,
+        timestamp TIMESTAMPTZ NOT NULL
+      )
+    `);
+
+    await this.query(`
+      INSERT INTO grounds (id, booths, stage, updated_at)
+      VALUES ('default', '[]'::jsonb, NULL, NOW())
+      ON CONFLICT (id) DO NOTHING
+    `);
+  }
+
+  readFile(filename) {
+    if (this.useNeon) {
+      throw new Error('readFile is not supported when using Neon DB');
+    }
+    return readJsonFileSync.call(this, filename);
+  }
+
+  writeFile(filename, data) {
+    if (this.useNeon) {
+      throw new Error('writeFile is not supported when using Neon DB');
+    }
+    writeJsonFileSync.call(this, filename, data);
+  }
+
   // ==================== USER OPERATIONS ====================
 
-  /**
-   * Get all users
-   * @returns {Array} Array of users (without password hashes)
-   */
-  getAllUsers() {
+  async getAllUsers() {
+    if (this.useNeon) {
+      const result = await this.query(`SELECT id, username, email, role, created_at, updated_at, must_change_password FROM users`);
+      return result.rows.map(row => ({
+        id: row.id,
+        username: row.username,
+        email: row.email,
+        role: row.role,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        mustChangePassword: row.must_change_password
+      }));
+    }
+
     const data = this.readFile('users');
     if (!data) return [];
-    
-    return data.users.map(u => ({
-      ...u,
-      passwordHash: undefined
-    }));
+    return data.users.map(u => ({ ...u, passwordHash: undefined }));
   }
 
-  /**
-   * Get user by username
-   * @param {string} username - Username
-   * @returns {Object|null} User object
-   */
-  getUserByUsername(username) {
-    const data = this.readFile('users');
-    if (!data) return null;
-    
-    return data.users.find(u => u.username.toLowerCase() === username.toLowerCase());
-  }
-
-  /**
-   * Get user by ID
-   * @param {string} id - User ID
-   * @returns {Object|null} User object
-   */
-  getUserById(id) {
-    const data = this.readFile('users');
-    if (!data) return null;
-    
-    const user = data.users.find(u => u.id === id);
-    if (user) {
-      const { passwordHash, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+  async getUserByUsername(username) {
+    if (this.useNeon) {
+      const result = await this.query(`SELECT * FROM users WHERE LOWER(username) = LOWER($1)`, [username]);
+      const row = result.rows[0];
+      if (!row) return null;
+      return {
+        id: row.id,
+        username: row.username,
+        email: row.email,
+        role: row.role,
+        passwordHash: row.password_hash,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        mustChangePassword: row.must_change_password
+      };
     }
-    return null;
+
+    const data = this.readFile('users');
+    if (!data) return null;
+    return data.users.find(u => u.username.toLowerCase() === username.toLowerCase()) || null;
   }
 
-  /**
-   * Create new user
-   * @param {Object} userData - User data {username, email, role, tempPassword}
-   * @returns {Object} Created user
-   */
-  async createUser(userData) {
+  async getUserById(id) {
+    if (this.useNeon) {
+      const result = await this.query(`SELECT id, username, email, role, created_at, updated_at, must_change_password FROM users WHERE id = $1`, [id]);
+      const row = result.rows[0];
+      if (!row) return null;
+      return {
+        id: row.id,
+        username: row.username,
+        email: row.email,
+        role: row.role,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        mustChangePassword: row.must_change_password
+      };
+    }
+
     const data = this.readFile('users');
-    
-    // Check if username exists
+    if (!data) return null;
+    const user = data.users.find(u => u.id === id);
+    if (!user) return null;
+    const { passwordHash, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  async createUser(userData) {
+    if (this.useNeon) {
+      const existing = await this.getUserByUsername(userData.username);
+      if (existing) {
+        throw new Error('Benutzer existiert bereits');
+      }
+
+      const passwordHash = await hashPassword(userData.tempPassword);
+      const id = `user-${Date.now()}`;
+      const now = new Date().toISOString();
+      await this.query(`
+        INSERT INTO users (id, username, email, role, password_hash, created_at, updated_at, must_change_password)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [id, userData.username, userData.email, userData.role || 'user', passwordHash, now, now, true]);
+
+      return {
+        id,
+        username: userData.username,
+        email: userData.email,
+        role: userData.role || 'user',
+        createdAt: now,
+        updatedAt: now,
+        mustChangePassword: true
+      };
+    }
+
+    const data = this.readFile('users');
     if (data.users.some(u => u.username.toLowerCase() === userData.username.toLowerCase())) {
       throw new Error('Benutzer existiert bereits');
     }
@@ -242,51 +358,74 @@ class DatabaseManager {
 
     data.users.push(newUser);
     this.writeFile('users', data);
-    
-    return {
-      ...newUser,
-      passwordHash: undefined
-    };
+
+    const { passwordHash: _, ...userWithoutPassword } = newUser;
+    return userWithoutPassword;
   }
 
-  /**
-   * Update user
-   * @param {string} userId - User ID
-   * @param {Object} updateData - Data to update
-   * @returns {Object} Updated user
-   */
   async updateUser(userId, updateData) {
+    if (this.useNeon) {
+      const existing = await this.query(`SELECT * FROM users WHERE id = $1`, [userId]);
+      if (!existing.rows.length) {
+        throw new Error('Benutzer nicht gefunden');
+      }
+
+      const user = existing.rows[0];
+      const updates = {
+        email: updateData.email ?? user.email,
+        role: updateData.role ?? user.role,
+        password_hash: user.password_hash,
+        must_change_password: user.must_change_password,
+        updated_at: new Date().toISOString()
+      };
+
+      if (updateData.password) {
+        updates.password_hash = await hashPassword(updateData.password);
+        updates.must_change_password = false;
+      }
+
+      await this.query(`
+        UPDATE users SET email = $1, role = $2, password_hash = $3, must_change_password = $4, updated_at = $5
+        WHERE id = $6
+      `, [updates.email, updates.role, updates.password_hash, updates.must_change_password, updates.updated_at, userId]);
+
+      return {
+        id: user.id,
+        username: user.username,
+        email: updates.email,
+        role: updates.role,
+        createdAt: user.created_at,
+        updatedAt: updates.updated_at,
+        mustChangePassword: updates.must_change_password
+      };
+    }
+
     const data = this.readFile('users');
     const userIndex = data.users.findIndex(u => u.id === userId);
-    
     if (userIndex === -1) {
       throw new Error('Benutzer nicht gefunden');
     }
 
     const user = data.users[userIndex];
-    
-    // Update fields
     if (updateData.email) user.email = updateData.email;
     if (updateData.role) user.role = updateData.role;
     if (updateData.password) {
       user.passwordHash = await hashPassword(updateData.password);
       user.mustChangePassword = false;
     }
-    
     user.updatedAt = new Date().toISOString();
     data.users[userIndex] = user;
-    
     this.writeFile('users', data);
-    
+
     const { passwordHash, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 
-  /**
-   * Delete user
-   * @param {string} userId - User ID
-   */
-  deleteUser(userId) {
+  async deleteUser(userId) {
+    if (this.useNeon) {
+      await this.query(`DELETE FROM users WHERE id = $1`, [userId]);
+      return;
+    }
     const data = this.readFile('users');
     data.users = data.users.filter(u => u.id !== userId);
     this.writeFile('users', data);
@@ -294,33 +433,65 @@ class DatabaseManager {
 
   // ==================== PROJECT OPERATIONS ====================
 
-  /**
-   * Get all projects
-   * @returns {Array} Array of projects
-   */
-  getAllProjects() {
+  async getAllProjects() {
+    if (this.useNeon) {
+      const result = await this.query(`SELECT * FROM projects ORDER BY created_at ASC`);
+      return result.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        supervisors: row.supervisors || [],
+        memberCount: row.member_count,
+        presentationType: row.presentation_type,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+    }
     const data = this.readFile('projects');
     return data?.projects || [];
   }
 
-  /**
-   * Get project by ID
-   * @param {string} id - Project ID
-   * @returns {Object|null} Project object
-   */
-  getProjectById(id) {
-    const projects = this.getAllProjects();
+  async getProjectById(id) {
+    if (this.useNeon) {
+      const result = await this.query(`SELECT * FROM projects WHERE id = $1`, [id]);
+      const row = result.rows[0];
+      if (!row) return null;
+      return {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        supervisors: row.supervisors || [],
+        memberCount: row.member_count,
+        presentationType: row.presentation_type,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+    }
+    const projects = await this.getAllProjects();
     return projects.find(p => p.id === id) || null;
   }
 
-  /**
-   * Create project
-   * @param {Object} projectData - Project data
-   * @returns {Object} Created project
-   */
-  createProject(projectData) {
+  async createProject(projectData) {
+    if (this.useNeon) {
+      const id = `proj-${Date.now()}`;
+      const now = new Date().toISOString();
+      await this.query(`
+        INSERT INTO projects (id, name, description, supervisors, member_count, presentation_type, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [id, projectData.name, projectData.description, JSON.stringify(projectData.supervisors || []), projectData.memberCount || 0, projectData.presentationType || 'booth', now, now]);
+      return {
+        id,
+        name: projectData.name,
+        description: projectData.description,
+        supervisors: projectData.supervisors || [],
+        memberCount: projectData.memberCount || 0,
+        presentationType: projectData.presentationType || 'booth',
+        createdAt: now,
+        updatedAt: now
+      };
+    }
+
     const data = this.readFile('projects');
-    
     const newProject = {
       id: `proj-${Date.now()}`,
       name: projectData.name,
@@ -331,29 +502,47 @@ class DatabaseManager {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-
     data.projects.push(newProject);
     this.writeFile('projects', data);
-    
     return newProject;
   }
 
-  /**
-   * Update project
-   * @param {string} projectId - Project ID
-   * @param {Object} updateData - Data to update
-   * @returns {Object} Updated project
-   */
-  updateProject(projectId, updateData) {
+  async updateProject(projectId, updateData) {
+    if (this.useNeon) {
+      const existing = await this.query(`SELECT * FROM projects WHERE id = $1`, [projectId]);
+      if (!existing.rows.length) {
+        throw new Error('Projekt nicht gefunden');
+      }
+      const project = existing.rows[0];
+      const updated = {
+        name: updateData.name ?? project.name,
+        description: updateData.description ?? project.description,
+        supervisors: updateData.supervisors ?? project.supervisors,
+        member_count: updateData.memberCount ?? project.member_count,
+        presentation_type: updateData.presentationType ?? project.presentation_type,
+        updated_at: new Date().toISOString()
+      };
+      await this.query(`
+        UPDATE projects SET name = $1, description = $2, supervisors = $3, member_count = $4, presentation_type = $5, updated_at = $6
+        WHERE id = $7
+      `, [updated.name, updated.description, JSON.stringify(updated.supervisors), updated.member_count, updated.presentation_type, updated.updated_at, projectId]);
+      return {
+        id: project.id,
+        name: updated.name,
+        description: updated.description,
+        supervisors: updated.supervisors,
+        memberCount: updated.member_count,
+        presentationType: updated.presentation_type,
+        createdAt: project.created_at,
+        updatedAt: updated.updated_at
+      };
+    }
     const data = this.readFile('projects');
     const projectIndex = data.projects.findIndex(p => p.id === projectId);
-    
     if (projectIndex === -1) {
       throw new Error('Projekt nicht gefunden');
     }
-
     const project = data.projects[projectIndex];
-    
     Object.assign(project, {
       name: updateData.name || project.name,
       description: updateData.description || project.description,
@@ -362,18 +551,16 @@ class DatabaseManager {
       presentationType: updateData.presentationType || project.presentationType,
       updatedAt: new Date().toISOString()
     });
-
     data.projects[projectIndex] = project;
     this.writeFile('projects', data);
-    
     return project;
   }
 
-  /**
-   * Delete project
-   * @param {string} projectId - Project ID
-   */
-  deleteProject(projectId) {
+  async deleteProject(projectId) {
+    if (this.useNeon) {
+      await this.query(`DELETE FROM projects WHERE id = $1`, [projectId]);
+      return;
+    }
     const data = this.readFile('projects');
     data.projects = data.projects.filter(p => p.id !== projectId);
     this.writeFile('projects', data);
@@ -381,23 +568,43 @@ class DatabaseManager {
 
   // ==================== SCHEDULE OPERATIONS ====================
 
-  /**
-   * Get all schedule slots
-   * @returns {Array} Array of schedule slots
-   */
-  getAllScheduleSlots() {
+  async getAllScheduleSlots() {
+    if (this.useNeon) {
+      const result = await this.query(`SELECT * FROM schedule ORDER BY order_num ASC`);
+      return result.rows.map(row => ({
+        id: row.id,
+        time: row.time,
+        duration: row.duration,
+        projectId: row.project_id,
+        order: row.order_num,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+    }
     const data = this.readFile('schedule');
     return data?.slots || [];
   }
 
-  /**
-   * Create schedule slot
-   * @param {Object} slotData - Slot data
-   * @returns {Object} Created slot
-   */
-  createScheduleSlot(slotData) {
+  async createScheduleSlot(slotData) {
+    if (this.useNeon) {
+      const id = `slot-${Date.now()}`;
+      const now = new Date().toISOString();
+      const order = slotData.order ?? 0;
+      await this.query(`
+        INSERT INTO schedule (id, time, duration, project_id, order_num, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [id, slotData.time, slotData.duration || 30, slotData.projectId || null, order, now, now]);
+      return {
+        id,
+        time: slotData.time,
+        duration: slotData.duration || 30,
+        projectId: slotData.projectId || null,
+        order,
+        createdAt: now,
+        updatedAt: now
+      };
+    }
     const data = this.readFile('schedule');
-    
     const newSlot = {
       id: `slot-${Date.now()}`,
       time: slotData.time,
@@ -407,21 +614,19 @@ class DatabaseManager {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-
     if (!data.slots) data.slots = [];
     data.slots.push(newSlot);
     this.writeFile('schedule', data);
-    
     return newSlot;
   }
 
-  /**
-   * Update schedule slot order
-   * @param {Array} orderedSlots - Array of {id, order} objects
-   */
-  updateScheduleOrder(orderedSlots) {
+  async updateScheduleOrder(orderedSlots) {
+    if (this.useNeon) {
+      const updates = orderedSlots.map(slot => this.query(`UPDATE schedule SET order_num = $1, updated_at = NOW() WHERE id = $2`, [slot.order, slot.id]));
+      await Promise.all(updates);
+      return;
+    }
     const data = this.readFile('schedule');
-    
     orderedSlots.forEach(({ id, order }) => {
       const slot = data.slots.find(s => s.id === id);
       if (slot) {
@@ -429,37 +634,54 @@ class DatabaseManager {
         slot.updatedAt = new Date().toISOString();
       }
     });
-
     this.writeFile('schedule', data);
   }
 
-  /**
-   * Update schedule slot
-   * @param {string} slotId - Slot ID
-   * @param {Object} updateData - Data to update
-   * @returns {Object} Updated slot
-   */
-  updateScheduleSlot(slotId, updateData) {
+  async updateScheduleSlot(slotId, updateData) {
+    if (this.useNeon) {
+      const existing = await this.query(`SELECT * FROM schedule WHERE id = $1`, [slotId]);
+      if (!existing.rows.length) {
+        throw new Error('Zeitplan-Slot nicht gefunden');
+      }
+      const slot = existing.rows[0];
+      const updated = {
+        time: updateData.time ?? slot.time,
+        duration: updateData.duration ?? slot.duration,
+        project_id: updateData.projectId ?? slot.project_id,
+        order_num: updateData.order ?? slot.order_num,
+        updated_at: new Date().toISOString()
+      };
+      await this.query(`
+        UPDATE schedule SET time = $1, duration = $2, project_id = $3, order_num = $4, updated_at = $5
+        WHERE id = $6
+      `, [updated.time, updated.duration, updated.project_id, updated.order_num, updated.updated_at, slotId]);
+      return {
+        id: slot.id,
+        time: updated.time,
+        duration: updated.duration,
+        projectId: updated.project_id,
+        order: updated.order_num,
+        createdAt: slot.created_at,
+        updatedAt: updated.updated_at
+      };
+    }
     const data = this.readFile('schedule');
     const slotIndex = data.slots.findIndex(s => s.id === slotId);
-    
     if (slotIndex === -1) {
       throw new Error('Zeitplan-Slot nicht gefunden');
     }
-
     const slot = data.slots[slotIndex];
     Object.assign(slot, updateData, { updatedAt: new Date().toISOString() });
     data.slots[slotIndex] = slot;
-
     this.writeFile('schedule', data);
     return slot;
   }
 
-  /**
-   * Delete schedule slot
-   * @param {string} slotId - Slot ID
-   */
-  deleteScheduleSlot(slotId) {
+  async deleteScheduleSlot(slotId) {
+    if (this.useNeon) {
+      await this.query(`DELETE FROM schedule WHERE id = $1`, [slotId]);
+      return;
+    }
     const data = this.readFile('schedule');
     data.slots = data.slots.filter(s => s.id !== slotId);
     this.writeFile('schedule', data);
@@ -467,21 +689,31 @@ class DatabaseManager {
 
   // ==================== GROUNDS OPERATIONS ====================
 
-  /**
-   * Get grounds layout (booths and stage)
-   * @returns {Object} Grounds data
-   */
-  getGrounds() {
+  async getGrounds() {
+    if (this.useNeon) {
+      const result = await this.query(`SELECT booths, stage FROM grounds WHERE id = 'default'`);
+      const row = result.rows[0];
+      if (!row) {
+        return { booths: [], stage: null };
+      }
+      return {
+        booths: row.booths || [],
+        stage: row.stage || null
+      };
+    }
     const data = this.readFile('grounds');
     return data || { booths: [], stage: null };
   }
 
-  /**
-   * Update grounds layout
-   * @param {Array} booths - Array of booth positions/sizes
-   * @param {Object} stage - Stage position/size
-   */
-  updateGrounds(booths, stage) {
+  async updateGrounds(booths, stage) {
+    if (this.useNeon) {
+      await this.query(`
+        INSERT INTO grounds (id, booths, stage, updated_at)
+        VALUES ('default', $1, $2, NOW())
+        ON CONFLICT (id) DO UPDATE SET booths = $1, stage = $2, updated_at = NOW()
+      `, [JSON.stringify(booths || []), JSON.stringify(stage || null)]);
+      return;
+    }
     const data = {
       booths: booths || [],
       stage: stage || null,
@@ -492,68 +724,106 @@ class DatabaseManager {
 
   // ==================== KANBAN OPERATIONS ====================
 
-  /**
-   * Get all kanban tasks
-   * @returns {Array} Array of tasks
-   */
-  getAllTasks() {
+  async getAllTasks() {
+    if (this.useNeon) {
+      const result = await this.query(`SELECT * FROM kanban ORDER BY order_num ASC`);
+      return result.rows.map(row => ({
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        column: row.column,
+        order: row.order_num,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        createdBy: row.created_by
+      }));
+    }
     const data = this.readFile('kanban');
     return data?.tasks || [];
   }
 
-  /**
-   * Create kanban task
-   * @param {Object} taskData - Task data {title, description, column}
-   * @returns {Object} Created task
-   */
-  createTask(taskData) {
+  async createTask(taskData) {
+    if (this.useNeon) {
+      const id = `task-${Date.now()}`;
+      const now = new Date().toISOString();
+      await this.query(`
+        INSERT INTO kanban (id, title, description, column, order_num, created_at, updated_at, created_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [id, taskData.title, taskData.description || '', taskData.column || 'todo', taskData.order || 0, now, now, taskData.createdBy || null]);
+      return {
+        id,
+        title: taskData.title,
+        description: taskData.description || '',
+        column: taskData.column || 'todo',
+        order: taskData.order || 0,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: taskData.createdBy
+      };
+    }
     const data = this.readFile('kanban');
-    
     const newTask = {
       id: `task-${Date.now()}`,
       title: taskData.title,
       description: taskData.description || '',
-      column: taskData.column || 'todo', // todo, inprogress, done
+      column: taskData.column || 'todo',
       order: (data.tasks?.length || 0) + 1,
       createdAt: new Date().toISOString(),
       createdBy: taskData.createdBy,
       updatedAt: new Date().toISOString()
     };
-
     if (!data.tasks) data.tasks = [];
     data.tasks.push(newTask);
     this.writeFile('kanban', data);
-    
     return newTask;
   }
 
-  /**
-   * Update task
-   * @param {string} taskId - Task ID
-   * @param {Object} updateData - Data to update
-   * @returns {Object} Updated task
-   */
-  updateTask(taskId, updateData) {
+  async updateTask(taskId, updateData) {
+    if (this.useNeon) {
+      const existing = await this.query(`SELECT * FROM kanban WHERE id = $1`, [taskId]);
+      if (!existing.rows.length) {
+        throw new Error('Task nicht gefunden');
+      }
+      const task = existing.rows[0];
+      const updated = {
+        title: updateData.title ?? task.title,
+        description: updateData.description ?? task.description,
+        column: updateData.column ?? task.column,
+        order_num: updateData.order ?? task.order_num,
+        updated_at: new Date().toISOString()
+      };
+      await this.query(`
+        UPDATE kanban SET title = $1, description = $2, column = $3, order_num = $4, updated_at = $5
+        WHERE id = $6
+      `, [updated.title, updated.description, updated.column, updated.order_num, updated.updated_at, taskId]);
+      return {
+        id: task.id,
+        title: updated.title,
+        description: updated.description,
+        column: updated.column,
+        order: updated.order_num,
+        createdAt: task.created_at,
+        updatedAt: updated.updated_at,
+        createdBy: task.created_by
+      };
+    }
     const data = this.readFile('kanban');
     const taskIndex = data.tasks.findIndex(t => t.id === taskId);
-    
     if (taskIndex === -1) {
       throw new Error('Task nicht gefunden');
     }
-
     const task = data.tasks[taskIndex];
     Object.assign(task, updateData, { updatedAt: new Date().toISOString() });
     data.tasks[taskIndex] = task;
-
     this.writeFile('kanban', data);
     return task;
   }
 
-  /**
-   * Delete task
-   * @param {string} taskId - Task ID
-   */
-  deleteTask(taskId) {
+  async deleteTask(taskId) {
+    if (this.useNeon) {
+      await this.query(`DELETE FROM kanban WHERE id = $1`, [taskId]);
+      return;
+    }
     const data = this.readFile('kanban');
     data.tasks = data.tasks.filter(t => t.id !== taskId);
     this.writeFile('kanban', data);
@@ -561,22 +831,31 @@ class DatabaseManager {
 
   // ==================== LOGGING OPERATIONS ====================
 
-  /**
-   * Get all logs
-   * @returns {Array} Array of log entries
-   */
-  getAllLogs() {
+  async getAllLogs() {
+    if (this.useNeon) {
+      const result = await this.query(`SELECT * FROM logs ORDER BY timestamp ASC`);
+      return result.rows.map(row => ({
+        id: row.id,
+        action: row.action,
+        userId: row.user_id,
+        details: row.details,
+        timestamp: row.timestamp
+      }));
+    }
     const data = this.readFile('logs');
     return data?.logs || [];
   }
 
-  /**
-   * Add log entry
-   * @param {Object} logData - Log data {action, userId, details}
-   */
-  addLog(logData) {
+  async addLog(logData) {
+    if (this.useNeon) {
+      const id = `log-${Date.now()}`;
+      await this.query(`
+        INSERT INTO logs (id, action, user_id, details, timestamp)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [id, logData.action, logData.userId, logData.details || '', new Date().toISOString()]);
+      return;
+    }
     const data = this.readFile('logs');
-    
     const logEntry = {
       id: `log-${Date.now()}`,
       action: logData.action,
@@ -584,15 +863,11 @@ class DatabaseManager {
       details: logData.details || '',
       timestamp: new Date().toISOString()
     };
-
     if (!data.logs) data.logs = [];
     data.logs.push(logEntry);
-    
-    // Keep only last 10000 logs
     if (data.logs.length > 10000) {
       data.logs = data.logs.slice(-10000);
     }
-
     this.writeFile('logs', data);
   }
 }

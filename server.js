@@ -21,7 +21,6 @@ const PORT = process.env.PORT || 3000;
 
 // Initialize database
 const db = new DatabaseManager(process.env.ENCRYPTION_KEY);
-db.initializeDefaults();
 
 // ==================== MIDDLEWARE ====================
 
@@ -49,26 +48,24 @@ app.use(attachUser);
  */
 async function initializeAdmin() {
   try {
-    const users = db.getAllUsers();
-    const adminExists = users.some(u => u.username === process.env.ADMIN_USER);
-    
-    if (!adminExists) {
-      const adminPasswordHash = await hashPassword(process.env.ADMIN_PASS);
-      const adminData = db.readFile('users');
-      
-      const adminUser = {
-        id: 'admin-001',
+    await db.initializeDefaults();
+
+    const adminUser = await db.getUserByUsername(process.env.ADMIN_USER);
+    if (!adminUser) {
+      const created = await db.createUser({
         username: process.env.ADMIN_USER,
-        passwordHash: adminPasswordHash,
         email: 'admin@mwg.local',
         role: 'admin',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      adminData.users[0] = adminUser;
-      db.writeFile('users', adminData);
+        tempPassword: process.env.ADMIN_PASS
+      });
+      await db.updateUser(created.id, { password: process.env.ADMIN_PASS, role: 'admin' });
       console.log('✓ Admin user initialized');
+      return;
+    }
+
+    if (!adminUser.passwordHash) {
+      await db.updateUser(adminUser.id, { password: process.env.ADMIN_PASS, role: 'admin' });
+      console.log('✓ Admin password initialized');
     }
   } catch (error) {
     console.error('Failed to initialize admin:', error);
@@ -79,9 +76,9 @@ async function initializeAdmin() {
 // ==================== ROUTES ====================
 
 // Public routes
-app.get('/', (req, res) => {
-  const slots = db.getAllScheduleSlots().sort((a, b) => a.order - b.order);
-  const projects = db.getAllProjects();
+app.get('/', async (req, res) => {
+  const slots = (await db.getAllScheduleSlots()).sort((a, b) => a.order - b.order);
+  const projects = await db.getAllProjects();
   res.render('index', { slots, projects });
 });
 
@@ -101,7 +98,7 @@ app.post('/login', async (req, res) => {
       return res.render('login', { error: 'Benutzername und Passwort erforderlich' });
     }
 
-    const user = db.getUserByUsername(username);
+    const user = await db.getUserByUsername(username);
     
     if (!user) {
       db.addLog({
@@ -172,12 +169,12 @@ app.get('/dashboard', (req, res) => {
 });
 
 // Projects routes
-app.get('/projekte', (req, res) => {
+app.get('/projekte', async (req, res) => {
   if (!req.session || !req.session.user) {
     return res.redirect('/login');
   }
 
-  const projects = db.getAllProjects();
+  const projects = await db.getAllProjects();
   res.render('projects/index', { projects });
 });
 
@@ -231,13 +228,13 @@ app.post('/api/projects', async (req, res) => {
 });
 
 // Schedule routes
-app.get('/zeitplan', (req, res) => {
+app.get('/zeitplan', async (req, res) => {
   if (!req.session || !req.session.user) {
     return res.redirect('/login');
   }
 
-  const slots = db.getAllScheduleSlots().sort((a, b) => a.order - b.order);
-  const projects = db.getAllProjects().filter(p => p.presentationType === 'stage-time-slot');
+  const slots = (await db.getAllScheduleSlots()).sort((a, b) => a.order - b.order);
+  const projects = (await db.getAllProjects()).filter(p => p.presentationType === 'stage-time-slot');
   
   res.render('schedule/index', { slots, projects });
 });
@@ -254,13 +251,13 @@ app.post('/api/schedule/slots', async (req, res) => {
       return res.status(400).json({ error: 'Zeit erforderlich' });
     }
 
-    const slot = db.createScheduleSlot({
+    const slot = await db.createScheduleSlot({
       time,
       duration: parseInt(duration) || 30,
       projectId: projectId || null
     });
 
-    db.addLog({
+    await db.addLog({
       action: 'schedule_slot_created',
       userId: req.session.user.id,
       details: `Created schedule slot: ${time}`
@@ -273,7 +270,7 @@ app.post('/api/schedule/slots', async (req, res) => {
   }
 });
 
-app.put('/api/schedule/reorder', (req, res) => {
+app.put('/api/schedule/reorder', async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
       return res.status(401).json({ error: 'Nicht authentifiziert' });
@@ -285,9 +282,9 @@ app.put('/api/schedule/reorder', (req, res) => {
       return res.status(400).json({ error: 'Slots müssen ein Array sein' });
     }
 
-    db.updateScheduleOrder(slots);
+    await db.updateScheduleOrder(slots);
 
-    db.addLog({
+    await db.addLog({
       action: 'schedule_reordered',
       userId: req.session.user.id,
       details: `Reordered ${slots.length} schedule slots`
@@ -301,18 +298,18 @@ app.put('/api/schedule/reorder', (req, res) => {
 });
 
 // Map/Grounds routes
-app.get('/gelande', (req, res) => {
+app.get('/gelande', async (req, res) => {
   if (!req.session || !req.session.user) {
     return res.redirect('/login');
   }
 
-  const grounds = db.getGrounds();
-  const projects = db.getAllProjects();
+  const grounds = await db.getGrounds();
+  const projects = await db.getAllProjects();
   
   res.render('map/index', { grounds, projects });
 });
 
-app.post('/api/grounds', (req, res) => {
+app.post('/api/grounds', async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
       return res.status(401).json({ error: 'Nicht authentifiziert' });
@@ -320,9 +317,9 @@ app.post('/api/grounds', (req, res) => {
 
     const { booths, stage } = req.body;
 
-    db.updateGrounds(booths, stage);
+    await db.updateGrounds(booths, stage);
 
-    db.addLog({
+    await db.addLog({
       action: 'grounds_updated',
       userId: req.session.user.id,
       details: `Updated grounds layout`
@@ -336,12 +333,12 @@ app.post('/api/grounds', (req, res) => {
 });
 
 // Kanban routes
-app.get('/kanban', (req, res) => {
+app.get('/kanban', async (req, res) => {
   if (!req.session || !req.session.user) {
     return res.redirect('/login');
   }
 
-  const tasks = db.getAllTasks();
+  const tasks = await db.getAllTasks();
   const todoTasks = tasks.filter(t => t.column === 'todo');
   const inProgressTasks = tasks.filter(t => t.column === 'inprogress');
   const doneTasks = tasks.filter(t => t.column === 'done');
@@ -349,7 +346,7 @@ app.get('/kanban', (req, res) => {
   res.render('kanban/index', { todoTasks, inProgressTasks, doneTasks });
 });
 
-app.post('/api/kanban/tasks', (req, res) => {
+app.post('/api/kanban/tasks', async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
       return res.status(401).json({ error: 'Nicht authentifiziert' });
@@ -361,14 +358,14 @@ app.post('/api/kanban/tasks', (req, res) => {
       return res.status(400).json({ error: 'Titel und Spalte erforderlich' });
     }
 
-    const task = db.createTask({
+    const task = await db.createTask({
       title,
       description,
       column,
       createdBy: req.session.user.id
     });
 
-    db.addLog({
+    await db.addLog({
       action: 'task_created',
       userId: req.session.user.id,
       details: `Created task: ${title}`
@@ -381,7 +378,7 @@ app.post('/api/kanban/tasks', (req, res) => {
   }
 });
 
-app.put('/api/kanban/tasks/:taskId', (req, res) => {
+app.put('/api/kanban/tasks/:taskId', async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
       return res.status(401).json({ error: 'Nicht authentifiziert' });
@@ -390,13 +387,13 @@ app.put('/api/kanban/tasks/:taskId', (req, res) => {
     const { taskId } = req.params;
     const { column, title, description } = req.body;
 
-    const task = db.updateTask(taskId, {
+    const task = await db.updateTask(taskId, {
       column,
       title,
       description
     });
 
-    db.addLog({
+    await db.addLog({
       action: 'task_updated',
       userId: req.session.user.id,
       details: `Updated task: ${taskId}`
@@ -409,7 +406,7 @@ app.put('/api/kanban/tasks/:taskId', (req, res) => {
   }
 });
 
-app.delete('/api/kanban/tasks/:taskId', (req, res) => {
+app.delete('/api/kanban/tasks/:taskId', async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
       return res.status(401).json({ error: 'Nicht authentifiziert' });
@@ -417,9 +414,9 @@ app.delete('/api/kanban/tasks/:taskId', (req, res) => {
 
     const { taskId } = req.params;
 
-    db.deleteTask(taskId);
+    await db.deleteTask(taskId);
 
-    db.addLog({
+    await db.addLog({
       action: 'task_deleted',
       userId: req.session.user.id,
       details: `Deleted task: ${taskId}`
@@ -444,8 +441,8 @@ app.get('/verwaltung', async (req, res) => {
       return res.status(403).render('error', { message: 'Zugriff verweigert' });
     }
 
-    const users = db.getAllUsers();
-    const logs = db.getAllLogs().reverse().slice(0, 100);
+    const users = await db.getAllUsers();
+    const logs = (await db.getAllLogs()).reverse().slice(0, 100);
     
     res.render('admin/index', { users, logs });
   } catch (error) {
@@ -508,10 +505,8 @@ app.use((err, req, res, next) => {
 // Export the Express app and initializer so a serverless wrapper can use them.
 export { app, initializeAdmin };
 
-// When running locally (dev), keep previous behavior: start server if this file
-// is executed directly as the main module. In serverless environments the app
-// will be imported and wrapped instead.
-if (process.env.NODE_ENV !== 'production' && process.argv[1] && process.argv[1].endsWith('server.js')) {
+// When running locally (dev), start the server if this file is executed directly.
+if (process.argv[1] && process.argv[1].endsWith('server.js')) {
   (async () => {
     try {
       await initializeAdmin();
@@ -524,7 +519,4 @@ if (process.env.NODE_ENV !== 'production' && process.argv[1] && process.argv[1].
       process.exit(1);
     }
   })();
-} else {
-  // Ensure admin user exists when imported by a serverless wrapper (non-blocking).
-  initializeAdmin().catch(err => console.error('Admin initialization failed:', err));
 }
