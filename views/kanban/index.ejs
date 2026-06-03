@@ -6,14 +6,11 @@
     <title>Kanban Board - Projektwoche MWG 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            border-radius: 0 !important;
-        }
-
         .glass-panel {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
         }
 
         .kanban-column {
@@ -21,6 +18,7 @@
             min-width: 300px;
             padding: 1.5rem;
             border-top: 4px solid;
+            border-radius: 0.75rem;
         }
 
         .column-todo {
@@ -48,6 +46,7 @@
             margin-bottom: 1rem;
             cursor: grab;
             transition: all 0.3s ease;
+            border-radius: 0.375rem;
             user-select: none;
         }
 
