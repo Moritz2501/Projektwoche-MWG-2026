@@ -283,6 +283,30 @@ Das Projekt nutzt Tailwind CSS mit eigenen CSS-Variablen und Klassen. Siehe `vie
 - [ ] Regelmäßige Backups einrichten
 - [ ] Log-Rotation konfigurieren
 
+### Vercel Deployment
+
+1. Repository zu GitHub pushen oder lokal mit Vercel CLI deployen.
+
+2. Setze in den Vercel Project Settings die folgenden Umgebungsvariablen (Environment Variables):
+
+- `ADMIN_USER` — Admin-Benutzername
+- `ADMIN_PASS` — Admin-Passwort
+- `ENCRYPTION_KEY` — 32-Byte Hex-String
+- `ENCRYPTION_IV` — 16-Byte Hex-String
+- `SESSION_SECRET` — Sichere Zufallszeichenkette
+- `NODE_ENV` — `production`
+
+3. Verbinde das Git-Repository in Vercel oder nutze die CLI:
+
+```bash
+npm i -g vercel
+vercel login
+vercel --prod
+```
+
+Hinweis: Das Projekt nutzt eine Serverless-Function unter `/api/server.js` (konfiguriert in `vercel.json`), die alle Routen behandelt und die EJS-Templates rendert. Statische Assets liegen im `public/`-Ordner.
+
+
 ### Mit Docker (Optional)
 ```dockerfile
 FROM node:18-alpine

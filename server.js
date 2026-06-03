@@ -181,7 +181,7 @@ app.get('/projekte', (req, res) => {
   res.render('projects/index', { projects });
 });
 
-app.get('/projekte/neu', (req, res) => {
+app.get('/projekte/neu', async (req, res) => {
   if (!req.session || !req.session.user) {
     return res.redirect('/login');
   }
@@ -503,20 +503,28 @@ app.use((err, req, res, next) => {
   res.status(500).render('error', { message: 'Ein Fehler ist aufgetreten' });
 });
 
-// ==================== SERVER START ====================
+// ==================== MODULE EXPORTS (for serverless) ====================
 
-async function startServer() {
-  try {
-    await initializeAdmin();
-    
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${PORT}`);
-      console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
+// Export the Express app and initializer so a serverless wrapper can use them.
+export { app, initializeAdmin };
+
+// When running locally (dev), keep previous behavior: start server if this file
+// is executed directly as the main module. In serverless environments the app
+// will be imported and wrapped instead.
+if (process.env.NODE_ENV !== 'production' && process.argv[1] && process.argv[1].endsWith('server.js')) {
+  (async () => {
+    try {
+      await initializeAdmin();
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running at http://localhost:${PORT}`);
+        console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+      });
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
+  })();
+} else {
+  // Ensure admin user exists when imported by a serverless wrapper (non-blocking).
+  initializeAdmin().catch(err => console.error('Admin initialization failed:', err));
 }
-
-startServer();
