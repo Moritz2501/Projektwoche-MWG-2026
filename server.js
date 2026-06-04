@@ -500,9 +500,8 @@ app.use((err, req, res, next) => {
   res.status(500).render('error', { message: 'Ein Fehler ist aufgetreten' });
 });
 
-// ==================== MODULE EXPORTS (for serverless) ====================
+// ==================== EXPORTS ====================
 
-// Export the Express app and initializer so a serverless wrapper can use them.
 export { app, initializeAdmin };
 
 // When running locally (dev), start the server if this file is executed directly.

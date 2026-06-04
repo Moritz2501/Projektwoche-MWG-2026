@@ -1,13 +1,10 @@
 import session from 'express-session';
 
-// Create a simple in-memory store with warning suppression for serverless
+// Simple in-memory session store for local deployment
 class SimpleSessionStore extends session.Store {
   constructor() {
     super();
     this.sessions = {};
-    if (process.env.NODE_ENV === 'production') {
-      console.warn('Using in-memory session store on Vercel. Sessions may be lost on redeployment.');
-    }
   }
 
   get(sid, callback) {
