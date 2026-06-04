@@ -6,6 +6,19 @@
     <title>Dashboard - Projektwoche MWG 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        :root {
+            --color-dark-base: #0a0f1e;
+            --color-deep-purple: #2d0a4e;
+            --color-accent: #7c3aed;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--color-dark-base) 0%, #1a1f3a 50%, var(--color-deep-purple) 100%);
+            color: #e5e7eb;
+            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
         .glass-panel {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
@@ -20,12 +33,16 @@
             padding: 2rem;
             transition: all 0.3s ease;
             border-radius: 0.75rem;
+            text-decoration: none;
+            color: inherit;
         }
 
         .dashboard-card:hover {
             background: rgba(255, 255, 255, 0.08);
             box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
             transform: translateY(-4px);
+            text-decoration: none;
+            color: inherit;
         }
 
         .card-icon {
@@ -38,18 +55,44 @@
             text-decoration: none;
             font-weight: 600;
             transition: all 0.3s ease;
+            display: inline-block;
         }
 
         .card-link:hover {
             color: #c4b5fd;
             transform: translateX(4px);
         }
+
+        .nav-link {
+            color: #a78bfa;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 0.5rem 0;
+        }
+
+        .nav-link:hover {
+            color: #c4b5fd;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e5e7eb;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body>
-    <%- include('../layout.ejs') %>
-</body>
-</html>
+    <div class="min-h-screen p-8">
 
 <!-- Content -->
 <div>
@@ -179,3 +222,6 @@
         </div>
     </div>
 </div>
+    </div>
+</body>
+</html>

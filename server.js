@@ -504,18 +504,16 @@ app.use((err, req, res, next) => {
 
 export { app, initializeAdmin };
 
-// When running locally (dev), start the server if this file is executed directly.
-if (process.argv[1] && process.argv[1].endsWith('server.js')) {
-  (async () => {
-    try {
-      await initializeAdmin();
-      app.listen(PORT, () => {
-        console.log(`🚀 Server running at http://localhost:${PORT}`);
-        console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-      });
-    } catch (error) {
-      console.error('Failed to start server:', error);
-      process.exit(1);
-    }
-  })();
-}
+// Start the server and initialize admin
+(async () => {
+  try {
+    await initializeAdmin();
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
+      console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+})();
