@@ -130,9 +130,14 @@
                             </td>
                             <% if (user) { %>
                                 <td class="px-4 py-3">
-                                    <a href="/projekte/<%= project.id %>/edit" class="text-purple-400 hover:text-purple-300 text-sm">
-                                        ✏️ Bearbeiten
-                                    </a>
+                                    <div class="flex items-center gap-3">
+                                        <a href="/projekte/<%= project.id %>/edit" class="text-purple-400 hover:text-purple-300 text-sm">
+                                            ✏️ Bearbeiten
+                                        </a>
+                                        <button type="button" onclick="deleteProject('<%= project.id %>', '<%= project.name.replace(/'/g, "\\'") %>')" class="text-red-400 hover:text-red-300 text-sm">
+                                            🗑️ Löschen
+                                        </button>
+                                    </div>
                                 </td>
                             <% } %>
                         </tr>
@@ -169,3 +174,27 @@
         </div>
     </div>
 </div>
+
+<script>
+    async function deleteProject(projectId, projectName) {
+        if (!confirm(`Soll das Projekt "${projectName}" wirklich gelöscht werden?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/projects/${projectId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                const data = await response.json().catch(() => ({}));
+                alert(data.error || 'Fehler beim Löschen des Projekts');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten');
+        }
+    }
+</script>

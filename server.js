@@ -288,6 +288,37 @@ app.put('/api/projects/:projectId', async (req, res) => {
   }
 });
 
+app.delete('/api/projects/:projectId', async (req, res) => {
+  try {
+    if (!req.session || !req.session.user) {
+      return res.status(401).json({ error: 'Nicht authentifiziert' });
+    }
+
+    const { hasPermission } = await import('./middleware/rbac.js');
+    if (!hasPermission(req.session.user.role, 'projects:delete')) {
+      return res.status(403).json({ error: 'Keine Berechtigung' });
+    }
+
+    const project = await db.getProjectById(req.params.projectId);
+    if (!project) {
+      return res.status(404).json({ error: 'Projekt nicht gefunden' });
+    }
+
+    await db.deleteProject(req.params.projectId);
+
+    await db.addLog({
+      action: 'project_deleted',
+      userId: req.session.user.id,
+      details: `Deleted project: ${project.name}`
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Project delete error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Batch project creation
 app.post('/api/projects/batch', async (req, res) => {
   try {

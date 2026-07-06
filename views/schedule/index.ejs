@@ -168,6 +168,12 @@
                         </div>
 
                         <div class="mt-4 flex flex-wrap gap-3">
+                            <button type="button" onclick="moveSlot('<%= slot.id %>', -1)" class="glass-panel px-4 py-2 text-gray-300 hover:text-white">
+                                ⬆️ Nach oben
+                            </button>
+                            <button type="button" onclick="moveSlot('<%= slot.id %>', 1)" class="glass-panel px-4 py-2 text-gray-300 hover:text-white">
+                                ⬇️ Nach unten
+                            </button>
                             <button type="button" onclick="updateSlot('<%= slot.id %>')" class="btn-primary">
                                 💾 Speichern
                             </button>
@@ -284,7 +290,7 @@
         }
     }
 
-    async function saveOrder() {
+    async function persistOrder(showSuccess = false) {
         const slots = document.querySelectorAll('.slot-card');
         const orderedSlots = Array.from(slots).map((card, index) => ({
             id: card.dataset.slotId,
@@ -299,7 +305,9 @@
             });
 
             if (response.ok) {
-                alert('Reihenfolge gespeichert!');
+                if (showSuccess) {
+                    alert('Reihenfolge gespeichert!');
+                }
             } else {
                 alert('Fehler beim Speichern');
             }
@@ -307,6 +315,31 @@
             console.error('Error:', error);
             alert('Ein Fehler ist aufgetreten');
         }
+    }
+
+    async function saveOrder() {
+        await persistOrder(true);
+    }
+
+    async function moveSlot(slotId, direction) {
+        const slotCard = document.querySelector(`.slot-card[data-slot-id="${slotId}"]`);
+        if (!slotCard) {
+            return;
+        }
+
+        const sibling = direction < 0 ? slotCard.previousElementSibling : slotCard.nextElementSibling;
+        if (!sibling || !sibling.classList.contains('slot-card')) {
+            return;
+        }
+
+        const parent = slotCard.parentElement;
+        if (direction < 0) {
+            parent.insertBefore(slotCard, sibling);
+        } else {
+            parent.insertBefore(sibling, slotCard);
+        }
+
+        await persistOrder(false);
     }
 
     // Drag and drop

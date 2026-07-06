@@ -6,16 +6,13 @@ Eine moderne, sichere Verwaltungsanwendung für die Schulprojektwoche MWG 2026 m
 
 - **Sichere Authentifizierung**: Session-basiert mit Bcrypt-Passwort-Hashing
 - **AES-256-GCM Verschlüsselung**: Alle JSON-Daten werden vollständig verschlüsselt
-- **Rollenbasierte Zugriffskontrolle (RBAC)**: 4 Rollen mit unterschiedlichen Berechtigungen
+- **Rollenbasierte Zugriffskontrolle (RBAC)**: Rollen mit unterschiedlichen Berechtigungen
   - **Admin**: Vollzugriff auf alle Funktionen
-  - **Projekt Verwaltung**: Verwaltet Projekte und Zeitplan
-  - **Bühnentechnik**: Verwaltet Zeitplan und Gelände-Layout
-  - **User**: Nur Lesezugriff auf Daten
+  - **User**: Projekte und Zeitplan verwalten
 - **Responsive UI**: Liquid Glass Design mit Dark Mode und Sharp Edges
 - **Interaktive Features**:
   - Drag-and-Drop Zeitplan-Verwaltung
-  - Interaktives Gelände-Layout mit Stände und Bühne
-  - Kanban Board für Aufgabenmanagement
+  - Pfeil-Steuerung im Zeitplan zum Verschieben von Slots
 - **Zentrales Logging**: Alle Systemaktionen werden protokolliert
 
 ## 📋 Systemanforderungen
@@ -115,20 +112,9 @@ Neue Benutzer erhalten automatisch generierte temporäre Passwörter im Format: 
 #### ⏰ Zeitplan
 - Verwaltung von Zeitplan-Slots
 - HTML5 Drag-and-Drop zum Sortieren
+- Pfeil-Buttons zum Verschieben nach oben/unten
 - Verknüpfung mit Bühnen-Projekten
 - **Alle rollen** können Slots erstellen/bearbeiten
-
-#### 🗺️ Gelände
-- Interaktive Canvas-basierte Visualisierung
-- Drag-and-Drop Stände aus Projektliste
-- Positionierbare Bühne
-- Größen-Anpassung
-- Persistierung im Dateisystem
-
-#### 📌 Kanban Board
-- 3 Spalten: "Zu erledigen" (Rot), "In Bearbeitung" (Gelb), "Erledigt" (Grün)
-- Drag-and-Drop zwischen Spalten
-- **Alle Benutzer** können Tasks erstellen
 
 #### 🔧 Verwaltung (nur Admin/Projekt Verwaltung)
 - **Benutzer-Verwaltung**:
@@ -168,8 +154,6 @@ Projektwoche-MWG-2026/
 │   │   ├── index.ejs            # Projekte-Liste
 │   │   └── form.ejs             # Projekt-Formular
 │   ├── schedule/index.ejs       # Zeitplan-Verwaltung
-│   ├── map/index.ejs            # Gelände-Visualisierung
-│   ├── kanban/index.ejs         # Kanban Board
 │   ├── admin/index.ejs          # Administration
 │   └── error.ejs                # Error-Seite
 ├── public/
@@ -191,11 +175,6 @@ Projektwoche-MWG-2026/
 - **Sharp Edges**: Keine Rounded Corners (border-radius: 0)
 - **Neon Glow**: Aktive Zustände mit box-shadow
 
-### Farb-Schema für Kanban
-- **Zu erledigen (Red)**: `#dc2626`
-- **In Bearbeitung (Yellow)**: `#ca8a04`
-- **Erledigt (Green)**: `#22c55e`
-
 ## 🗄️ Datenspeicherung
 
 ### Verschlüsselte JSON-Dateien
@@ -204,8 +183,6 @@ Alle Daten werden in `database/data/` als verschlüsselte JSON-Dateien gespeiche
 - `users.json`: Benutzer und Authentifizierung
 - `projects.json`: Projekt-Informationen
 - `schedule.json`: Zeitplan-Slots
-- `grounds.json`: Gelände-Layout (Stände & Bühne)
-- `kanban.json`: Kanban Board Tasks
 - `logs.json`: System-Logs
 
 ### Daten-Format
@@ -233,16 +210,6 @@ Jede Datei wird mit AES-256-GCM verschlüsselt und als Base64-String gespeichert
 - `GET /zeitplan` - Zeitplan-Verwaltung
 - `POST /api/schedule/slots` - Neuen Slot erstellen
 - `PUT /api/schedule/reorder` - Slots sortieren
-
-### Gelände
-- `GET /gelande` - Gelände-Visualisierung
-- `POST /api/grounds` - Layout speichern
-
-### Kanban
-- `GET /kanban` - Kanban Board
-- `POST /api/kanban/tasks` - Task erstellen
-- `PUT /api/kanban/tasks/:taskId` - Task aktualisieren
-- `DELETE /api/kanban/tasks/:taskId` - Task löschen
 
 ### Administration
 - `GET /verwaltung` - Admin-Panel

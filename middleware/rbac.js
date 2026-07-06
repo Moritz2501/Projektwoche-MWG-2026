@@ -16,11 +16,7 @@ const rolePermissions = {
     'schedule:create',
     'schedule:edit',
     'schedule:delete',
-    'schedule:read',
-    'kanban:create',
-    'kanban:edit',
-    'kanban:delete',
-    'kanban:read'
+    'schedule:read'
   ],
   user: [
     'projects:create',
@@ -30,11 +26,7 @@ const rolePermissions = {
     'schedule:create',
     'schedule:edit',
     'schedule:delete',
-    'schedule:read',
-    'kanban:create',
-    'kanban:edit',
-    'kanban:delete',
-    'kanban:read'
+    'schedule:read'
   ]
 };
 

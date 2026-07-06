@@ -35,9 +35,9 @@ Siehe [README_DE.md](./README_DE.md) für vollständige deutsche Dokumentation m
 
 - ✅ **AES-256-GCM Verschlüsselung**: Vollständige Verschlüsselung aller JSON-Dateien
 - ✅ **Session-basierte Auth**: Sichere Authentifizierung mit Bcrypt
-- ✅ **RBAC**: 4 Benutzerrollen mit granularer Zugriffskontrolle
+- ✅ **RBAC**: Rollenbasierte Zugriffskontrolle
 - ✅ **Dark Mode UI**: "Liquid Glass" Design mit Sharp Edges
-- ✅ **Interaktiv**: Drag-and-Drop, Canvas-basierte Visualisierung
+- ✅ **Interaktiv**: Drag-and-Drop im Zeitplan
 - ✅ **Logging**: Zentrales System-Logging aller Aktionen
 - ✅ **JSON-DB**: Keine externe Datenbank erforderlich
 
@@ -46,9 +46,7 @@ Siehe [README_DE.md](./README_DE.md) für vollständige deutsche Dokumentation m
 | Rolle | Berechtigungen |
 |-------|---|
 | **Admin** | Vollzugriff auf alle Funktionen |
-| **Projekt Verwaltung** | Projekte & Zeitplan verwalten |
-| **Bühnentechnik** | Bühne & Zeitplan verwalten |
-| **User** | Nur Lesezugriff |
+| **User** | Projekte und Zeitplan verwalten |
 
 ## 📋 Hauptfunktionen
 
@@ -56,8 +54,6 @@ Siehe [README_DE.md](./README_DE.md) für vollständige deutsche Dokumentation m
 - 📊 **Dashboard**: Zentrale Navigation
 - 📋 **Projekte**: Übersicht und Verwaltung
 - ⏰ **Zeitplan**: Drag-and-Drop Management
-- 🗺️ **Gelände**: Interaktive Visualisierung mit Standen und Bühne
-- 📌 **Kanban**: To-Do / In Progress / Done Board
 - 🔧 **Administration**: Benutzer & Logs verwalten
 
 ## 🛠️ Technologie-Stack
@@ -82,8 +78,6 @@ Siehe [README_DE.md](./README_DE.md) für vollständige deutsche Dokumentation m
 │   ├── dashboard.ejs           # Dashboard
 │   ├── projects/               # Projects pages
 │   ├── schedule/               # Schedule pages
-│   ├── map/                    # Grounds visualization
-│   ├── kanban/                 # Kanban board
 │   └── admin/                  # Admin panel
 └── public/                      # Static files
 ```

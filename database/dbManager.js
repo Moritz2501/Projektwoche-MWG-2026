@@ -201,14 +201,6 @@ class DatabaseManager {
         writeJsonFileSync.call(this, 'schedule', { slots: [] });
       }
 
-      if (!readJsonFileSync.call(this, 'grounds')) {
-        writeJsonFileSync.call(this, 'grounds', { booths: [], stage: null });
-      }
-
-      if (!readJsonFileSync.call(this, 'kanban')) {
-        writeJsonFileSync.call(this, 'kanban', { tasks: [] });
-      }
-
       if (!readJsonFileSync.call(this, 'logs')) {
         writeJsonFileSync.call(this, 'logs', { logs: [] });
       }
@@ -259,28 +251,6 @@ class DatabaseManager {
     `);
 
     await this.query(`
-      CREATE TABLE IF NOT EXISTS grounds (
-        id TEXT PRIMARY KEY,
-        booths JSONB,
-        stage JSONB,
-        updated_at TIMESTAMPTZ NOT NULL
-      )
-    `);
-
-    await this.query(`
-      CREATE TABLE IF NOT EXISTS kanban (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        description TEXT,
-        column TEXT,
-        order_num INTEGER DEFAULT 0,
-        created_at TIMESTAMPTZ NOT NULL,
-        updated_at TIMESTAMPTZ NOT NULL,
-        created_by TEXT
-      )
-    `);
-
-    await this.query(`
       CREATE TABLE IF NOT EXISTS logs (
         id TEXT PRIMARY KEY,
         action TEXT,
@@ -288,12 +258,6 @@ class DatabaseManager {
         details TEXT,
         timestamp TIMESTAMPTZ NOT NULL
       )
-    `);
-
-    await this.query(`
-      INSERT INTO grounds (id, booths, stage, updated_at)
-      VALUES ('default', '[]'::jsonb, NULL, NOW())
-      ON CONFLICT (id) DO NOTHING
     `);
   }
 
@@ -750,148 +714,6 @@ class DatabaseManager {
     const data = this.readFile('schedule');
     data.slots = data.slots.filter(s => s.id !== slotId);
     this.writeFile('schedule', data);
-  }
-
-  // ==================== GROUNDS OPERATIONS ====================
-
-  async getGrounds() {
-    if (this.useNeon) {
-      const result = await this.query(`SELECT booths, stage FROM grounds WHERE id = 'default'`);
-      const row = result.rows[0];
-      if (!row) {
-        return { booths: [], stage: null };
-      }
-      return {
-        booths: row.booths || [],
-        stage: row.stage || null
-      };
-    }
-    const data = this.readFile('grounds');
-    return data || { booths: [], stage: null };
-  }
-
-  async updateGrounds(booths, stage) {
-    if (this.useNeon) {
-      await this.query(`
-        INSERT INTO grounds (id, booths, stage, updated_at)
-        VALUES ('default', $1, $2, NOW())
-        ON CONFLICT (id) DO UPDATE SET booths = $1, stage = $2, updated_at = NOW()
-      `, [JSON.stringify(booths || []), JSON.stringify(stage || null)]);
-      return;
-    }
-    const data = {
-      booths: booths || [],
-      stage: stage || null,
-      updatedAt: new Date().toISOString()
-    };
-    this.writeFile('grounds', data);
-  }
-
-  // ==================== KANBAN OPERATIONS ====================
-
-  async getAllTasks() {
-    if (this.useNeon) {
-      const result = await this.query(`SELECT * FROM kanban ORDER BY order_num ASC`);
-      return result.rows.map(row => ({
-        id: row.id,
-        title: row.title,
-        description: row.description,
-        column: row.column,
-        order: row.order_num,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        createdBy: row.created_by
-      }));
-    }
-    const data = this.readFile('kanban');
-    return data?.tasks || [];
-  }
-
-  async createTask(taskData) {
-    if (this.useNeon) {
-      const id = `task-${Date.now()}`;
-      const now = new Date().toISOString();
-      await this.query(`
-        INSERT INTO kanban (id, title, description, column, order_num, created_at, updated_at, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      `, [id, taskData.title, taskData.description || '', taskData.column || 'todo', taskData.order || 0, now, now, taskData.createdBy || null]);
-      return {
-        id,
-        title: taskData.title,
-        description: taskData.description || '',
-        column: taskData.column || 'todo',
-        order: taskData.order || 0,
-        createdAt: now,
-        updatedAt: now,
-        createdBy: taskData.createdBy
-      };
-    }
-    const data = this.readFile('kanban');
-    const newTask = {
-      id: `task-${Date.now()}`,
-      title: taskData.title,
-      description: taskData.description || '',
-      column: taskData.column || 'todo',
-      order: (data.tasks?.length || 0) + 1,
-      createdAt: new Date().toISOString(),
-      createdBy: taskData.createdBy,
-      updatedAt: new Date().toISOString()
-    };
-    if (!data.tasks) data.tasks = [];
-    data.tasks.push(newTask);
-    this.writeFile('kanban', data);
-    return newTask;
-  }
-
-  async updateTask(taskId, updateData) {
-    if (this.useNeon) {
-      const existing = await this.query(`SELECT * FROM kanban WHERE id = $1`, [taskId]);
-      if (!existing.rows.length) {
-        throw new Error('Task nicht gefunden');
-      }
-      const task = existing.rows[0];
-      const updated = {
-        title: updateData.title ?? task.title,
-        description: updateData.description ?? task.description,
-        column: updateData.column ?? task.column,
-        order_num: updateData.order ?? task.order_num,
-        updated_at: new Date().toISOString()
-      };
-      await this.query(`
-        UPDATE kanban SET title = $1, description = $2, column = $3, order_num = $4, updated_at = $5
-        WHERE id = $6
-      `, [updated.title, updated.description, updated.column, updated.order_num, updated.updated_at, taskId]);
-      return {
-        id: task.id,
-        title: updated.title,
-        description: updated.description,
-        column: updated.column,
-        order: updated.order_num,
-        createdAt: task.created_at,
-        updatedAt: updated.updated_at,
-        createdBy: task.created_by
-      };
-    }
-    const data = this.readFile('kanban');
-    const taskIndex = data.tasks.findIndex(t => t.id === taskId);
-    if (taskIndex === -1) {
-      throw new Error('Task nicht gefunden');
-    }
-    const task = data.tasks[taskIndex];
-    Object.assign(task, updateData, { updatedAt: new Date().toISOString() });
-    data.tasks[taskIndex] = task;
-    this.writeFile('kanban', data);
-    return task;
-  }
-
-  async deleteTask(taskId) {
-    if (this.useNeon) {
-      await this.query(`DELETE FROM kanban WHERE id = $1`, [taskId]);
-      return;
-    }
-    const data = this.readFile('kanban');
-    data.tasks = data.tasks.filter(t => t.id !== taskId);
-    this.writeFile('kanban', data);
   }
 
   // ==================== LOGGING OPERATIONS ====================
