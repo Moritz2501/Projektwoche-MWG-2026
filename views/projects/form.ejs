@@ -62,15 +62,15 @@
         <div>
             <h1 class="page-title text-4xl font-bold mb-2">
             <% if (project) { %>
-                ✏️ Projekt bearbeiten
+                Projekt bearbeiten
             <% } else { %>
-                ➕ Neues Projekt
+                Neues Projekt
             <% } %>
         </h1>
         <p class="page-subtitle">Fülle die Projektdetails aus</p>
         </div>
         <div class="page-actions">
-            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+            <a href="/dashboard" class="back-home-link">Dashboard</a>
             <a href="/projekte" class="btn-secondary">← Zurück</a>
         </div>
     </div>
@@ -148,10 +148,10 @@
                         </label>
                         <select id="presentationType" name="presentationType" class="input-field">
                             <option value="booth" <%= project && project.presentationType === 'booth' ? 'selected' : '' %>>
-                                🏪 Stand
+                                Stand
                             </option>
                             <option value="stage-time-slot" <%= project && project.presentationType === 'stage-time-slot' ? 'selected' : '' %>>
-                                🎭 Bühnen-Zeitslot
+                                Bühnen-Zeitslot
                             </option>
                         </select>
                     </div>
@@ -161,13 +161,13 @@
                 <div class="mt-8 flex gap-4">
                     <button type="submit" class="btn-primary">
                         <% if (project) { %>
-                            💾 Aktualisieren
+                            Aktualisieren
                         <% } else { %>
-                            ✅ Erstellen
+                            Erstellen
                         <% } %>
                     </button>
                     <a href="/projekte" class="glass-panel px-6 py-3 text-gray-300 hover:text-white block text-center">
-                        ❌ Abbrechen
+                        Abbrechen
                     </a>
                 </div>
             </form>

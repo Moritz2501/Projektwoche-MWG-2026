@@ -40,16 +40,26 @@
         }
 
         .schedule-slot {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid #d9c4bb;
             padding: 1.5rem;
             margin-bottom: 1rem;
             transition: all 0.3s ease;
+            border-radius: 14px;
+            color: #171312;
         }
 
         .schedule-slot:hover {
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+            background: #ffffff;
+            box-shadow: 0 8px 22px rgba(111, 91, 86, 0.16);
+        }
+
+        .schedule-slot h3,
+        .schedule-slot p,
+        .schedule-slot .text-gray-300,
+        .schedule-slot .text-gray-400,
+        .schedule-slot .text-white {
+            color: #171312 !important;
         }
 
         .time-badge {
@@ -64,8 +74,8 @@
     <div class="min-h-screen p-8">
         <!-- Header -->
         <div class="max-w-4xl mx-auto mb-12">
-            <div class="glass-panel p-8 mb-8">
-                <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600 mb-2">
+            <div class="glass-panel hero-panel p-8 mb-8">
+                <h1 class="text-4xl font-bold hero-title text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600 mb-2">
                     Projektwoche MWG 2026
                 </h1>
                 <p class="text-gray-300">Live Zeitplan und Informationen</p>
@@ -73,7 +83,7 @@
 
             <div class="flex gap-4">
                 <a href="/login" class="btn-primary">
-                    🔓 Anmelden
+                    Anmelden
                 </a>
             </div>
         </div>
@@ -81,7 +91,7 @@
         <!-- Schedule Section -->
         <div class="max-w-4xl mx-auto">
             <div class="mb-8">
-                <h2 class="text-3xl font-bold text-white mb-6">📅 Live Zeitplan</h2>
+                <h2 class="text-3xl font-bold text-white mb-6">Live Zeitplan</h2>
 
                 <% if (slots && slots.length > 0) { %>
                     <div class="space-y-4">
@@ -92,7 +102,7 @@
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="time-badge mb-3">
-                                            ⏰ <%= slot.time %> (<%= slot.duration %> min)
+                                                <%= slot.time %> (<%= slot.duration %> min)
                                         </div>
                                         <% if (project) { %>
                                             <h3 class="text-lg font-semibold text-white mt-3">
@@ -127,12 +137,12 @@
 
             <!-- Projects Section -->
             <div class="mb-8">
-                <h2 class="text-3xl font-bold text-white mb-6">📋 Projekte</h2>
+                <h2 class="text-3xl font-bold text-white mb-6">Projekte</h2>
 
                 <% if (projects && projects.length > 0) { %>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <% projects.forEach(project => { %>
-                            <div class="glass-panel p-6">
+                            <div class="glass-panel dashboard-card p-6">
                                 <h3 class="text-lg font-semibold text-white mb-2">
                                     <%= project.name %>
                                 </h3>
@@ -141,7 +151,7 @@
                                 </p>
                                 <div class="flex justify-between items-center">
                                     <span class="text-xs text-gray-400">
-                                        👥 <%= project.memberCount %> Teilnehmer
+                                        <%= project.memberCount %> Teilnehmer
                                     </span>
                                     <span class="text-xs bg-purple-500/20 border border-purple-500/50 px-2 py-1 text-purple-300">
                                         <%= project.presentationType === 'booth' ? 'Stand' : 'Bühne' %>

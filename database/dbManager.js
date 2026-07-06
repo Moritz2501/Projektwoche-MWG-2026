@@ -110,9 +110,31 @@ class DatabaseManager {
     const userUsername = process.env.USER_USER || 'user';
     const adminPassword = process.env.ADMIN_PASS || 'Admin123!';
     const userPassword = process.env.USER_PASS || 'User123!';
+    const adminPasswordHash = process.env.ADMIN_PASS_HASH;
+    const userPasswordHash = process.env.USER_PASS_HASH;
+
+    const resolvePasswordHash = async (password, providedHash) => {
+      if (providedHash && /^\$2[aby]\$\d{2}\$/.test(providedHash)) {
+        return providedHash;
+      }
+      return hashPassword(password);
+    };
+
     const desiredUsers = [
-      { username: adminUsername, email: 'admin@mwg.local', role: 'admin', password: adminPassword },
-      { username: userUsername, email: 'user@mwg.local', role: 'user', password: userPassword }
+      {
+        username: adminUsername,
+        email: 'admin@mwg.local',
+        role: 'admin',
+        password: adminPassword,
+        passwordHash: await resolvePasswordHash(adminPassword, adminPasswordHash)
+      },
+      {
+        username: userUsername,
+        email: 'user@mwg.local',
+        role: 'user',
+        password: userPassword,
+        passwordHash: await resolvePasswordHash(userPassword, userPasswordHash)
+      }
     ];
 
     if (this.useNeon) {
@@ -123,7 +145,7 @@ class DatabaseManager {
 
       for (const desired of desiredUsers) {
         const existingUser = existingRows.find(row => row.username?.toLowerCase() === desired.username.toLowerCase());
-        const passwordHash = await hashPassword(desired.password);
+        const passwordHash = desired.passwordHash;
 
         if (existingUser) {
           await this.query(`
@@ -153,7 +175,7 @@ class DatabaseManager {
 
     for (const desired of desiredUsers) {
       const existingUser = usersData.users.find(user => user.username.toLowerCase() === desired.username.toLowerCase());
-      const passwordHash = await hashPassword(desired.password);
+      const passwordHash = desired.passwordHash;
 
       if (existingUser) {
         keptUsers.push({

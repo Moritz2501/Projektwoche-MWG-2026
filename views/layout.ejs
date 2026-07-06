@@ -169,31 +169,31 @@
                 <div class="flex-1">
                     <div class="space-y-2">
                         <a href="/dashboard" class="nav-link block text-gray-300 hover:text-white">
-                            📊 Dashboard
+                            Dashboard
                         </a>
                         <a href="/projekte" class="nav-link block text-gray-300 hover:text-white">
-                            📋 Projekte
+                            Projekte
                         </a>
                         <a href="/zeitplan" class="nav-link block text-gray-300 hover:text-white">
-                            ⏰ Zeitplan
+                            Zeitplan
                         </a>
                         <% if (user && user.role === 'admin') { %>
                             <a href="/verwaltung" class="nav-link block text-gray-300 hover:text-white">
-                                🔧 Verwaltung
+                                Verwaltung
                             </a>
                         <% } %>
                     </div>
                 </div>
 
                 <div class="border-t border-white/10 pt-4">
-                    <a href="/dashboard" class="back-home-link w-full mb-3">🏠 Dashboard</a>
-                    <div class="glass-panel p-4 mb-4">
+                    <a href="/dashboard" class="back-home-link w-full mb-3">Dashboard</a>
+                    <div class="glass-panel user-info-card p-4 mb-4">
                         <p class="text-xs text-gray-400">Benutzer</p>
                         <p class="text-sm font-semibold text-white mt-1"><%= user.username %></p>
                         <p class="text-xs text-purple-400 mt-1 capitalize"><%= user.role %></p>
                     </div>
                     <a href="/logout" class="btn-secondary w-full text-center block">
-                        🚪 Abmelden
+                        Abmelden
                     </a>
                 </div>
             </nav>

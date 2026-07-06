@@ -95,21 +95,21 @@
 <div>
     <div class="page-header mb-8">
         <div>
-            <h1 class="page-title text-4xl font-bold mb-2">🔧 Verwaltung</h1>
+            <h1 class="page-title text-4xl font-bold mb-2">Verwaltung</h1>
             <p class="page-subtitle">Systemverwaltung und Benutzermenagement</p>
         </div>
         <div class="page-actions">
-            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+            <a href="/dashboard" class="back-home-link">Dashboard</a>
         </div>
     </div>
 
     <!-- Tabs -->
     <div class="flex gap-4 mb-8 border-b border-white/10">
         <button onclick="switchTab('users')" class="tab-btn active px-4 py-2 border-b-2 border-purple-500 text-purple-400">
-            👤 Benutzer
+            Benutzer
         </button>
         <button onclick="switchTab('logs')" class="tab-btn px-4 py-2 text-gray-400 hover:text-white">
-            📋 Systemlogs
+            Systemlogs
         </button>
     </div>
 
@@ -117,7 +117,7 @@
     <div id="users-tab" class="tab-content">
         <div class="mb-8">
             <div class="glass-panel p-6">
-                <h3 class="text-lg font-semibold text-white mb-4">🔐 Feste Konten</h3>
+                <h3 class="text-lg font-semibold text-white mb-4">Feste Konten</h3>
                 <p class="text-gray-400 mb-4">
                     Es stehen nur die beiden festen Konten <span class="text-purple-300 font-semibold">admin</span> und <span class="text-purple-300 font-semibold">user</span> zur Verfügung.
                     Die Passwörter werden über die Umgebungsvariablen <span class="text-gray-200 font-mono">ADMIN_PASS</span> und <span class="text-gray-200 font-mono">USER_PASS</span> gesetzt.
@@ -127,7 +127,7 @@
 
         <!-- Users Table -->
         <div class="glass-panel p-6 overflow-x-auto">
-            <h3 class="text-lg font-semibold text-white mb-4">📊 Benutzer</h3>
+            <h3 class="text-lg font-semibold text-white mb-4">Benutzer</h3>
             <% if (users && users.length > 0) { %>
                 <table class="table-glass w-full">
                     <thead>
@@ -149,7 +149,7 @@
                                     <%= new Date(user.createdAt).toLocaleDateString('de-DE') %>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <span class="success-badge">🟢 Aktiv</span>
+                                    <span class="success-badge">Aktiv</span>
                                 </td>
                             </tr>
                         <% }); %>
@@ -164,7 +164,7 @@
     <!-- Logs Tab -->
     <div id="logs-tab" class="tab-content" style="display: none;">
         <div class="glass-panel p-6 overflow-x-auto">
-            <h3 class="text-lg font-semibold text-white mb-4">📋 Systemlogs (letzte 100)</h3>
+            <h3 class="text-lg font-semibold text-white mb-4">Systemlogs (letzte 100)</h3>
             <% if (logs && logs.length > 0) { %>
                 <table class="table-glass w-full text-sm">
                     <thead>
@@ -216,7 +216,7 @@
             </div>
             <div>
                 <p class="text-xs text-gray-400">Status</p>
-                <p class="text-sm text-green-400">🟢 Online</p>
+                <p class="text-sm text-green-400">Online</p>
             </div>
             <div>
                 <p class="text-xs text-gray-400">Letzte Aktivität</p>

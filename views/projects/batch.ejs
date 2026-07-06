@@ -160,11 +160,11 @@
 <div>
     <div class="page-header mb-8">
         <div>
-            <h1 class="page-title text-4xl font-bold mb-2">📚 Mehrere Projekte importieren</h1>
+            <h1 class="page-title text-4xl font-bold mb-2">Mehrere Projekte importieren</h1>
             <p class="page-subtitle">Geben Sie mehrere Projekte auf einmal ein oder importieren Sie aus CSV</p>
         </div>
         <div class="page-actions">
-            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+            <a href="/dashboard" class="back-home-link">Dashboard</a>
             <a href="/projekte" class="btn-secondary">← Zurück</a>
         </div>
     </div>
@@ -172,8 +172,8 @@
     <div class="max-w-6xl">
         <!-- Tabs -->
         <div class="flex gap-4 mb-8 border-b border-white/10">
-            <button onclick="switchTab('form')" class="tab-btn active">📝 Formular</button>
-            <button onclick="switchTab('csv')" class="tab-btn">📊 CSV Import</button>
+            <button onclick="switchTab('form')" class="tab-btn active">Formular</button>
+            <button onclick="switchTab('csv')" class="tab-btn">CSV Import</button>
         </div>
 
         <!-- Form Tab -->
@@ -185,9 +185,9 @@
                 <div id="projects-container"></div>
                 
                 <div class="mt-6 flex gap-4">
-                    <button onclick="addProjectForm()" class="btn-primary">➕ Projekt hinzufügen</button>
+                    <button onclick="addProjectForm()" class="btn-primary">Projekt hinzufügen</button>
                     <button onclick="submitProjects()" class="btn-primary" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border-color: rgba(5, 150, 105, 0.5);">
-                        ✅ Alle Projekte speichern
+                        Alle Projekte speichern
                     </button>
                 </div>
             </div>
@@ -208,16 +208,16 @@
                 <textarea id="csv-input" class="input-field" placeholder="Projekte hier einfügen (ein Projekt pro Zeile)..."></textarea>
 
                 <div class="mt-6 flex gap-4">
-                    <button onclick="previewCSV()" class="btn-secondary">👁️ Vorschau</button>
+                    <button onclick="previewCSV()" class="btn-secondary">Vorschau</button>
                     <button onclick="submitCSV()" class="btn-primary" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border-color: rgba(5, 150, 105, 0.5);">
-                        ✅ Alle Projekte importieren
+                        Alle Projekte importieren
                     </button>
                 </div>
             </div>
 
             <!-- CSV Preview -->
             <div id="csv-preview" class="hidden mt-6 glass-panel p-8">
-                <h3 class="text-lg font-bold text-white mb-4">📋 Vorschau</h3>
+                <h3 class="text-lg font-bold text-white mb-4">Vorschau</h3>
                 <div id="preview-content"></div>
             </div>
         </div>
@@ -259,7 +259,7 @@
                 <div class="flex justify-between items-center mb-3">
                     <h4 class="text-white font-semibold">Projekt ${index + 1}</h4>
                     <button type="button" onclick="removeProjectForm(${index})" class="text-red-400 hover:text-red-300 text-sm">
-                        ✕ Entfernen
+                        Entfernen
                     </button>
                 </div>
                 
@@ -269,8 +269,8 @@
                 <input type="number" placeholder="Anzahl Teilnehmer" class="project-memberCount" value="1" min="1">
                 
                 <select class="project-presentationType">
-                    <option value="booth">🏪 Stand</option>
-                    <option value="stage-time-slot">🎭 Bühnen-Zeitslot</option>
+                    <option value="booth">Stand</option>
+                    <option value="stage-time-slot">Bühnen-Zeitslot</option>
                 </select>
             </div>
         `;
@@ -321,7 +321,7 @@
 
             if (response.ok) {
                 const result = await response.json();
-                alert(`✅ ${result.created} Projekt(e) erfolgreich erstellt!`);
+                alert(`${result.created} Projekt(e) erfolgreich erstellt!`);
                 window.location.href = '/projekte';
             } else {
                 const error = await response.json();
@@ -364,7 +364,7 @@
                     <p class="text-white font-semibold">${p.name}</p>
                     <p class="text-gray-300 text-sm">${p.description}</p>
                     <div class="text-xs text-gray-400 mt-2">
-                        👥 ${p.memberCount} | 👤 ${p.supervisors || '-'} | ${p.presentationType === 'booth' ? '🏪 Stand' : '🎭 Bühne'}
+                        ${p.memberCount} Teilnehmer | ${p.supervisors || '-'} | ${p.presentationType === 'booth' ? 'Stand' : 'Bühne'}
                     </div>
                 </div>
             `;
@@ -412,7 +412,7 @@
 
             if (response.ok) {
                 const result = await response.json();
-                alert(`✅ ${result.created} Projekt(e) erfolgreich importiert!`);
+                alert(`${result.created} Projekt(e) erfolgreich importiert!`);
                 window.location.href = '/projekte';
             } else {
                 const error = await response.json();

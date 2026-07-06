@@ -86,9 +86,9 @@
             <p class="page-subtitle">Verwalte und bearbeite die Zeitplan-Slots</p>
         </div>
         <div class="page-actions">
-            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+            <a href="/dashboard" class="back-home-link">Dashboard</a>
             <button onclick="showCreateForm()" class="btn-primary">
-                ➕ Neuer Slot
+                Neuer Slot
             </button>
         </div>
     </div>
@@ -113,9 +113,9 @@
                 </div>
             </div>
             <div class="mt-4 flex gap-2">
-                <button type="submit" class="btn-primary">💾 Erstellen</button>
+                <button type="submit" class="btn-primary">Erstellen</button>
                 <button type="button" onclick="hideCreateForm()" class="glass-panel px-4 py-2 text-gray-300 hover:text-white">
-                    ❌ Abbrechen
+                    Abbrechen
                 </button>
             </div>
         </form>
@@ -133,7 +133,7 @@
                         <div class="flex justify-between items-start gap-4 flex-wrap">
                             <div class="flex-1 min-w-[220px]">
                                 <div class="time-badge">
-                                    ⏰ <%= slot.duration ? `${slot.duration} min` : 'ohne Dauer' %>
+                                    <%= slot.duration ? `${slot.duration} min` : 'ohne Dauer' %>
                                 </div>
                                 <% if (project) { %>
                                     <h4 class="text-white font-semibold mt-2"><%= project.name %></h4>
@@ -144,7 +144,7 @@
                                     <p class="text-gray-300 text-sm mt-2">Zeit: <%= slot.time %></p>
                                 <% } %>
                             </div>
-                            <span class="text-gray-500 text-xs">📌 Ziehe zum Sortieren</span>
+                            <span class="text-gray-500 text-xs">Ziehen zum Sortieren</span>
                         </div>
 
                         <div class="mt-4 grid gap-4 md:grid-cols-3">
@@ -175,10 +175,10 @@
                                 ⬇️ Nach unten
                             </button>
                             <button type="button" onclick="updateSlot('<%= slot.id %>')" class="btn-primary">
-                                💾 Speichern
+                                Speichern
                             </button>
                             <button type="button" onclick="deleteSlot('<%= slot.id %>')" class="glass-panel px-4 py-2 text-gray-300 hover:text-white">
-                                🗑️ Entfernen
+                                Entfernen
                             </button>
                         </div>
                     </div>
@@ -189,16 +189,16 @@
         <!-- Reorder Controls -->
         <div class="glass-panel p-4 text-center">
             <button onclick="saveOrder()" class="btn-primary">
-                💾 Reihenfolge speichern
+                Reihenfolge speichern
             </button>
         </div>
     <% } else { %>
         <div class="glass-panel p-12 text-center">
             <p class="text-gray-400 text-lg mb-4">
-                📭 Noch keine Zeitplan-Slots vorhanden
+                Noch keine Zeitplan-Slots vorhanden
             </p>
             <button onclick="showCreateForm()" class="btn-primary">
-                ➕ Ersten Slot erstellen
+                Ersten Slot erstellen
             </button>
         </div>
     <% } %>
