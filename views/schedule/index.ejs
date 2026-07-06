@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zeitplan - Projektwoche MWG 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         * {
             border-radius: 0 !important;
@@ -79,28 +80,27 @@
 
 <!-- Content -->
 <div>
-    <div class="flex justify-between items-center mb-8">
+    <div class="page-header mb-8">
         <div>
-            <h1 class="text-4xl font-bold text-white mb-2">⏰ Zeitplan</h1>
-            <p class="text-gray-400">Verwalte und bearbeite die Zeitplan-Slots</p>
+            <h1 class="page-title text-4xl font-bold mb-2">⏰ Zeitplan</h1>
+            <p class="page-subtitle">Verwalte und bearbeite die Zeitplan-Slots</p>
         </div>
-        <button onclick="showCreateForm()" class="btn-primary">
-            ➕ Neuer Slot
-        </button>
+        <div class="page-actions">
+            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+            <button onclick="showCreateForm()" class="btn-primary">
+                ➕ Neuer Slot
+            </button>
+        </div>
     </div>
 
     <!-- Create Form (Hidden) -->
     <div id="createForm" class="glass-panel p-6 mb-8" style="display: none;">
         <h3 class="text-lg font-semibold text-white mb-4">Neuer Zeitplan-Slot</h3>
         <form onsubmit="createSlot(event)">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm text-gray-300 mb-2">Zeit</label>
-                    <input type="time" id="slotTime" class="input-field w-full" required>
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-300 mb-2">Dauer (Minuten)</label>
-                    <input type="number" id="slotDuration" class="input-field w-full" value="30" min="5" max="240">
+                    <label class="block text-sm text-gray-300 mb-2">Dauer (Minuten, optional)</label>
+                    <input type="number" id="slotDuration" class="input-field w-full" value="" min="5" max="240" placeholder="z. B. 30">
                 </div>
                 <div>
                     <label class="block text-sm text-gray-300 mb-2">Projekt</label>
@@ -133,7 +133,7 @@
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <div class="time-badge">
-                                    ⏰ <%= slot.time %> (<%= slot.duration %> min)
+                                    ⏰ <%= slot.duration ? `${slot.duration} min` : 'ohne Dauer' %>
                                 </div>
                                 <% if (project) { %>
                                     <h4 class="text-white font-semibold mt-2"><%= project.name %></h4>
@@ -169,7 +169,7 @@
 <script>
     function showCreateForm() {
         document.getElementById('createForm').style.display = 'block';
-        document.getElementById('slotTime').focus();
+        document.getElementById('slotDuration').focus();
     }
 
     function hideCreateForm() {
@@ -179,7 +179,6 @@
     async function createSlot(event) {
         event.preventDefault();
         
-        const time = document.getElementById('slotTime').value;
         const duration = document.getElementById('slotDuration').value;
         const projectId = document.getElementById('slotProject').value;
 
@@ -188,8 +187,8 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    time,
-                    duration: parseInt(duration),
+                    time: null,
+                    duration: duration ? parseInt(duration) : null,
                     projectId: projectId || null
                 })
             });

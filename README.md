@@ -4,6 +4,8 @@ Eine moderne, sichere Verwaltungsanwendung für die Schulprojektwoche MWG 2026 m
 
 ## 🚀 Quick Start
 
+Dieses Projekt läuft lokal und kann direkt auf Vercel deployed werden.
+
 ```bash
 # Abhängigkeiten installieren
 npm install

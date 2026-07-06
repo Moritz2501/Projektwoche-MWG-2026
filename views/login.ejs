@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anmelden - Projektwoche MWG 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         :root {
             --color-dark-base: #0a0f1e;
@@ -84,6 +85,9 @@
             <!-- Login Form -->
             <div class="glass-panel p-8">
                 <h2 class="text-2xl font-bold text-white mb-6">Anmelden</h2>
+                <p class="text-sm text-gray-400 mb-4">
+                    Verfügbare Konten: <span class="text-purple-300 font-semibold">admin</span> und <span class="text-purple-300 font-semibold">user</span>
+                </p>
 
                 <% if (error) { %>
                     <div class="error-alert">
@@ -130,7 +134,7 @@
             <!-- Footer Info -->
             <div class="text-center mt-6">
                 <p class="text-sm text-gray-400">
-                    <a href="/" class="text-purple-400 hover:text-purple-300">← Zur Startseite</a>
+                    <a href="/" class="back-home-link">← Zur Startseite</a>
                 </p>
             </div>
         </div>

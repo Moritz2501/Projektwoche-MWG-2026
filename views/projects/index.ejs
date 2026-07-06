@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Projekte - Projektwoche MWG 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.05);
@@ -70,16 +71,19 @@
 
 <!-- Content -->
 <div>
-    <div class="flex justify-between items-center mb-8">
+    <div class="page-header mb-8">
         <div>
-            <h1 class="text-4xl font-bold text-white mb-2">📋 Projekte</h1>
-            <p class="text-gray-400">Übersicht aller teilnehmenden Schulprojekte</p>
+            <h1 class="page-title text-4xl font-bold mb-2">📋 Projekte</h1>
+            <p class="page-subtitle">Übersicht aller teilnehmenden Schulprojekte</p>
         </div>
-        <% if (user && (user.role === 'admin' || user.role === 'projekt-verwaltung')) { %>
-            <a href="/projekte/neu" class="btn-primary">
-                ➕ Neues Projekt
-            </a>
-        <% } %>
+        <div class="page-actions">
+            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+            <% if (user && user.role === 'admin') { %>
+                <a href="/projekte/neu" class="btn-primary">
+                    ➕ Neues Projekt
+                </a>
+            <% } %>
+        </div>
     </div>
 
     <% if (projects && projects.length > 0) { %>
@@ -92,7 +96,7 @@
                         <th class="px-4 py-3 font-semibold">Betreuer</th>
                         <th class="px-4 py-3 font-semibold">Teilnehmer</th>
                         <th class="px-4 py-3 font-semibold">Präsentation</th>
-                        <% if (user && (user.role === 'admin' || user.role === 'projekt-verwaltung')) { %>
+                        <% if (user && user.role === 'admin') { %>
                             <th class="px-4 py-3 font-semibold">Aktionen</th>
                         <% } %>
                     </tr>
@@ -119,7 +123,7 @@
                                     <span class="badge-stage">🎭 Bühne</span>
                                 <% } %>
                             </td>
-                            <% if (user && (user.role === 'admin' || user.role === 'projekt-verwaltung')) { %>
+                            <% if (user && user.role === 'admin') { %>
                                 <td class="px-4 py-3">
                                     <button class="text-purple-400 hover:text-purple-300 text-sm">
                                         ✏️ Bearbeiten
@@ -136,7 +140,7 @@
             <p class="text-gray-400 text-lg mb-4">
                 📭 Noch keine Projekte vorhanden
             </p>
-            <% if (user && (user.role === 'admin' || user.role === 'projekt-verwaltung')) { %>
+            <% if (user && user.role === 'admin') { %>
                 <a href="/projekte/neu" class="btn-primary">
                     ➕ Erstes Projekt erstellen
                 </a>

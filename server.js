@@ -18,6 +18,11 @@ const __dirname = path.dirname(__filename);
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+
+if (!process.env.ENCRYPTION_KEY && !process.env.DATABASE_URL && !process.env.NEON_DATABASE_URL) {
+  process.env.ENCRYPTION_KEY = '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff';
+}
 
 // Initialize database
 const db = new DatabaseManager(process.env.ENCRYPTION_KEY);
@@ -35,6 +40,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(session(sessionConfig));
 
 // View engine setup
+app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -49,27 +55,10 @@ app.use(attachUser);
 async function initializeAdmin() {
   try {
     await db.initializeDefaults();
-
-    const adminUser = await db.getUserByUsername(process.env.ADMIN_USER);
-    if (!adminUser) {
-      const created = await db.createUser({
-        username: process.env.ADMIN_USER,
-        email: 'admin@mwg.local',
-        role: 'admin',
-        tempPassword: process.env.ADMIN_PASS
-      });
-      await db.updateUser(created.id, { password: process.env.ADMIN_PASS, role: 'admin' });
-      console.log('✓ Admin user initialized');
-      return;
-    }
-
-    if (!adminUser.passwordHash) {
-      await db.updateUser(adminUser.id, { password: process.env.ADMIN_PASS, role: 'admin' });
-      console.log('✓ Admin password initialized');
-    }
+    console.log('✓ Standard user accounts initialized');
   } catch (error) {
-    console.error('Failed to initialize admin:', error);
-    process.exit(1);
+    console.error('Failed to initialize users:', error);
+    throw error;
   }
 }
 
@@ -245,22 +234,18 @@ app.post('/api/schedule/slots', async (req, res) => {
       return res.status(401).json({ error: 'Nicht authentifiziert' });
     }
 
-    const { time, duration, projectId } = req.body;
-
-    if (!time) {
-      return res.status(400).json({ error: 'Zeit erforderlich' });
-    }
+    const { duration, projectId } = req.body;
 
     const slot = await db.createScheduleSlot({
-      time,
-      duration: parseInt(duration) || 30,
+      time: null,
+      duration: duration ? parseInt(duration) : null,
       projectId: projectId || null
     });
 
     await db.addLog({
       action: 'schedule_slot_created',
       userId: req.session.user.id,
-      details: `Created schedule slot: ${time}`
+      details: `Created schedule slot with duration: ${duration || 'none'}`
     });
 
     res.json(slot);
@@ -297,138 +282,6 @@ app.put('/api/schedule/reorder', async (req, res) => {
   }
 });
 
-// Map/Grounds routes
-app.get('/gelande', async (req, res) => {
-  if (!req.session || !req.session.user) {
-    return res.redirect('/login');
-  }
-
-  const grounds = await db.getGrounds();
-  const projects = await db.getAllProjects();
-  
-  res.render('map/index', { grounds, projects });
-});
-
-app.post('/api/grounds', async (req, res) => {
-  try {
-    if (!req.session || !req.session.user) {
-      return res.status(401).json({ error: 'Nicht authentifiziert' });
-    }
-
-    const { booths, stage } = req.body;
-
-    await db.updateGrounds(booths, stage);
-
-    await db.addLog({
-      action: 'grounds_updated',
-      userId: req.session.user.id,
-      details: `Updated grounds layout`
-    });
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Grounds update error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Kanban routes
-app.get('/kanban', async (req, res) => {
-  if (!req.session || !req.session.user) {
-    return res.redirect('/login');
-  }
-
-  const tasks = await db.getAllTasks();
-  const todoTasks = tasks.filter(t => t.column === 'todo');
-  const inProgressTasks = tasks.filter(t => t.column === 'inprogress');
-  const doneTasks = tasks.filter(t => t.column === 'done');
-  
-  res.render('kanban/index', { todoTasks, inProgressTasks, doneTasks });
-});
-
-app.post('/api/kanban/tasks', async (req, res) => {
-  try {
-    if (!req.session || !req.session.user) {
-      return res.status(401).json({ error: 'Nicht authentifiziert' });
-    }
-
-    const { title, description, column } = req.body;
-
-    if (!title || !column) {
-      return res.status(400).json({ error: 'Titel und Spalte erforderlich' });
-    }
-
-    const task = await db.createTask({
-      title,
-      description,
-      column,
-      createdBy: req.session.user.id
-    });
-
-    await db.addLog({
-      action: 'task_created',
-      userId: req.session.user.id,
-      details: `Created task: ${title}`
-    });
-
-    res.json(task);
-  } catch (error) {
-    console.error('Task creation error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.put('/api/kanban/tasks/:taskId', async (req, res) => {
-  try {
-    if (!req.session || !req.session.user) {
-      return res.status(401).json({ error: 'Nicht authentifiziert' });
-    }
-
-    const { taskId } = req.params;
-    const { column, title, description } = req.body;
-
-    const task = await db.updateTask(taskId, {
-      column,
-      title,
-      description
-    });
-
-    await db.addLog({
-      action: 'task_updated',
-      userId: req.session.user.id,
-      details: `Updated task: ${taskId}`
-    });
-
-    res.json(task);
-  } catch (error) {
-    console.error('Task update error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/kanban/tasks/:taskId', async (req, res) => {
-  try {
-    if (!req.session || !req.session.user) {
-      return res.status(401).json({ error: 'Nicht authentifiziert' });
-    }
-
-    const { taskId } = req.params;
-
-    await db.deleteTask(taskId);
-
-    await db.addLog({
-      action: 'task_deleted',
-      userId: req.session.user.id,
-      details: `Deleted task: ${taskId}`
-    });
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Task deletion error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Admin routes
 app.get('/verwaltung', async (req, res) => {
   try {
@@ -451,45 +304,6 @@ app.get('/verwaltung', async (req, res) => {
   }
 });
 
-app.post('/api/admin/users', async (req, res) => {
-  try {
-    if (!req.session || !req.session.user) {
-      return res.status(401).json({ error: 'Nicht authentifiziert' });
-    }
-
-    const { hasPermission } = await import('./middleware/rbac.js');
-    if (!hasPermission(req.session.user.role, 'admin:create_user')) {
-      return res.status(403).json({ error: 'Keine Berechtigung' });
-    }
-
-    const { username, email, role } = req.body;
-    const { generateTemporaryPassword } = await import('./utils/passwordHelper.js');
-
-    if (!username || !email || !role) {
-      return res.status(400).json({ error: 'Alle Felder erforderlich' });
-    }
-
-    const tempPassword = generateTemporaryPassword();
-    const user = await db.createUser({
-      username,
-      email,
-      role,
-      tempPassword
-    });
-
-    db.addLog({
-      action: 'user_created',
-      userId: req.session.user.id,
-      details: `Created user: ${username}`
-    });
-
-    res.json({ ...user, tempPassword });
-  } catch (error) {
-    console.error('User creation error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Error handling
 app.use((req, res) => {
   res.status(404).render('error', { message: 'Seite nicht gefunden' });
@@ -504,16 +318,26 @@ app.use((err, req, res, next) => {
 
 export { app, initializeAdmin };
 
-// Start the server and initialize admin
-(async () => {
+async function startServer() {
   try {
     await initializeAdmin();
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${PORT}`);
-      console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
+
+    if (!isVercel) {
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running at http://localhost:${PORT}`);
+        console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+      });
+    }
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1);
+    if (!isVercel) {
+      process.exit(1);
+    }
   }
-})();
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
+
+export { startServer };

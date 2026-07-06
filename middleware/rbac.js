@@ -12,38 +12,28 @@ const rolePermissions = {
     'projects:create',
     'projects:edit',
     'projects:delete',
+    'projects:read',
     'schedule:create',
     'schedule:edit',
     'schedule:delete',
-    'map:edit',
+    'schedule:read',
     'kanban:create',
     'kanban:edit',
-    'kanban:delete'
+    'kanban:delete',
+    'kanban:read'
   ],
-  'projekt-verwaltung': [
+  user: [
     'projects:create',
     'projects:edit',
     'projects:delete',
     'projects:read',
-    'schedule:read',
     'schedule:create',
     'schedule:edit',
-    'kanban:create',
-    'kanban:edit'
-  ],
-  'bühnentechnik': [
+    'schedule:delete',
     'schedule:read',
-    'schedule:create',
-    'schedule:edit',
-    'map:read',
     'kanban:create',
-    'kanban:edit'
-  ],
-  user: [
-    'projects:read',
-    'schedule:read',
-    'map:read',
-    'kanban:create',
+    'kanban:edit',
+    'kanban:delete',
     'kanban:read'
   ]
 };
@@ -115,7 +105,5 @@ export function hasPermission(role, permission) {
 
 export const ROLES = {
   ADMIN: 'admin',
-  PROJEKT_VERWALTUNG: 'projekt-verwaltung',
-  BÜHNENTECHNIK: 'bühnentechnik',
   USER: 'user'
 };

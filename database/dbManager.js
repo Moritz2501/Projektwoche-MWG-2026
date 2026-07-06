@@ -105,28 +105,91 @@ class DatabaseManager {
     return this.pool.query(text, params);
   }
 
-  async initializeDefaults() {
+  async ensureDefaultUsers() {
+    const adminUsername = process.env.ADMIN_USER || 'admin';
+    const userUsername = process.env.USER_USER || 'user';
+    const adminPassword = process.env.ADMIN_PASS || 'Admin123!';
+    const userPassword = process.env.USER_PASS || 'User123!';
+    const desiredUsers = [
+      { username: adminUsername, email: 'admin@mwg.local', role: 'admin', password: adminPassword },
+      { username: userUsername, email: 'user@mwg.local', role: 'user', password: userPassword }
+    ];
+
     if (this.useNeon) {
-      await this.createTables();
+      const existing = await this.query(`SELECT id, username FROM users`);
+      const existingRows = existing.rows;
+      const usernames = desiredUsers.map(user => user.username.toLowerCase());
+      await this.query(`DELETE FROM users WHERE LOWER(username) NOT IN (${usernames.map((_, index) => `$${index + 1}`).join(',')})`, usernames);
+
+      for (const desired of desiredUsers) {
+        const existingUser = existingRows.find(row => row.username?.toLowerCase() === desired.username.toLowerCase());
+        const passwordHash = await hashPassword(desired.password);
+
+        if (existingUser) {
+          await this.query(`
+            UPDATE users
+            SET email = $1, role = $2, password_hash = $3, must_change_password = FALSE, updated_at = NOW()
+            WHERE id = $4
+          `, [desired.email, desired.role, passwordHash, existingUser.id]);
+        } else {
+          const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          await this.query(`
+            INSERT INTO users (id, username, email, role, password_hash, created_at, updated_at, must_change_password)
+            VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), FALSE)
+          `, [id, desired.username, desired.email, desired.role, passwordHash]);
+        }
+      }
+
       return;
     }
 
+    const data = this.readFile('users');
+    if (!data) {
+      writeJsonFileSync.call(this, 'users', { users: [] });
+    }
+
+    const usersData = this.readFile('users') || { users: [] };
+    const keptUsers = [];
+
+    for (const desired of desiredUsers) {
+      const existingUser = usersData.users.find(user => user.username.toLowerCase() === desired.username.toLowerCase());
+      const passwordHash = await hashPassword(desired.password);
+
+      if (existingUser) {
+        keptUsers.push({
+          ...existingUser,
+          email: desired.email,
+          role: desired.role,
+          passwordHash,
+          mustChangePassword: false,
+          updatedAt: new Date().toISOString()
+        });
+      } else {
+        keptUsers.push({
+          id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          username: desired.username,
+          email: desired.email,
+          role: desired.role,
+          passwordHash,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          mustChangePassword: false
+        });
+      }
+    }
+
+    usersData.users = keptUsers;
+    this.writeFile('users', usersData);
+  }
+
+  async initializeDefaults() {
+    if (this.useNeon) {
+      await this.createTables();
+    }
+
     try {
-      // Initialize users
       if (!readJsonFileSync.call(this, 'users')) {
-        const users = {
-          users: [
-            {
-              id: 'admin-001',
-              username: process.env.ADMIN_USER || 'admin',
-              passwordHash: null,
-              email: 'admin@mwg.local',
-              role: 'admin',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          ]
-        };
+        const users = { users: [] };
         writeJsonFileSync.call(this, 'users', users);
       }
 
@@ -149,6 +212,8 @@ class DatabaseManager {
       if (!readJsonFileSync.call(this, 'logs')) {
         writeJsonFileSync.call(this, 'logs', { logs: [] });
       }
+
+      await this.ensureDefaultUsers();
     } catch (error) {
       console.error('Error initializing database:', error.message);
     }

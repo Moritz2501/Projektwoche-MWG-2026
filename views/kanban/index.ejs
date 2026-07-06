@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kanban Board - Projektwoche MWG 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.05);
@@ -105,10 +106,13 @@
 
 <!-- Content -->
 <div>
-    <div class="flex justify-between items-center mb-8">
+    <div class="page-header mb-8">
         <div>
-            <h1 class="text-4xl font-bold text-white mb-2">📌 Kanban Board</h1>
-            <p class="text-gray-400">Verwalte Aufgaben in Spalten</p>
+            <h1 class="page-title text-4xl font-bold mb-2">📌 Kanban Board</h1>
+            <p class="page-subtitle">Verwalte Aufgaben in Spalten</p>
+        </div>
+        <div class="page-actions">
+            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
         </div>
     </div>
 

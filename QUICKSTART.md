@@ -1,8 +1,8 @@
 # Quick Start Guide
 
-Diese Anwendung ist jetzt komplett lokalisiert und läuft ohne Cloud-Services!
+Diese Anwendung läuft lokal und kann direkt auf Vercel deployed werden.
 
-## Schnelstart (lokal oder Raspberry Pi)
+## Schnelstart
 
 ### 1. Dependencies installieren
 ```bash
@@ -58,11 +58,13 @@ Die folgenden Dateien wurden entfernt (nicht mehr nötig):
 
 Das Projekt ist jetzt vollständig lokal betriebsfähig!
 
-## Für Raspberry Pi
+## Deployment
 
-Siehe [SETUP_RASPBERRY_PI.md](SETUP_RASPBERRY_PI.md) für detaillierte Anweisungen zur Installation und zum Autostart.
+- Für Vercel: Der Einstiegspunkt ist [api/index.js](api/index.js).
+- Für lokale Entwicklung: Nutze `npm run dev`.
+- Für Produktion: Nutze `npm start`.
 
 ---
 
 **Entwicklung**: Nutze `npm run dev` für schnelle Iterationen  
-**Produktion**: Nutze `npm start` oder systemd Service auf Raspberry Pi
+**Produktion**: Nutze `npm start`

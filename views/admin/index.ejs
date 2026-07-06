@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verwaltung - Projektwoche MWG 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         * {
             border-radius: 0 !important;
@@ -92,9 +93,14 @@
 
 <!-- Content -->
 <div>
-    <div class="mb-8">
-        <h1 class="text-4xl font-bold text-white mb-2">🔧 Verwaltung</h1>
-        <p class="text-gray-400">Systemverwaltung und Benutzermenagement</p>
+    <div class="page-header mb-8">
+        <div>
+            <h1 class="page-title text-4xl font-bold mb-2">🔧 Verwaltung</h1>
+            <p class="page-subtitle">Systemverwaltung und Benutzermenagement</p>
+        </div>
+        <div class="page-actions">
+            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+        </div>
     </div>
 
     <!-- Tabs -->
@@ -111,31 +117,11 @@
     <div id="users-tab" class="tab-content">
         <div class="mb-8">
             <div class="glass-panel p-6">
-                <h3 class="text-lg font-semibold text-white mb-4">➕ Neuer Benutzer</h3>
-                <form onsubmit="createUser(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-2">Benutzername</label>
-                        <input type="text" id="newUsername" class="input-field w-full" placeholder="Benutzer..." required>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-2">Email</label>
-                        <input type="email" id="newEmail" class="input-field w-full" placeholder="email@example.com" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-2">Rolle</label>
-                        <select id="newRole" class="input-field w-full" required>
-                            <option value="user">User</option>
-                            <option value="bühnentechnik">Bühnentechnik</option>
-                            <option value="projekt-verwaltung">Projekt Verwaltung</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <button type="submit" class="btn-primary w-full">
-                            ✅ Erstellen
-                        </button>
-                    </div>
-                </form>
+                <h3 class="text-lg font-semibold text-white mb-4">🔐 Feste Konten</h3>
+                <p class="text-gray-400 mb-4">
+                    Es stehen nur die beiden festen Konten <span class="text-purple-300 font-semibold">admin</span> und <span class="text-purple-300 font-semibold">user</span> zur Verfügung.
+                    Die Passwörter werden über die Umgebungsvariablen <span class="text-gray-200 font-mono">ADMIN_PASS</span> und <span class="text-gray-200 font-mono">USER_PASS</span> gesetzt.
+                </p>
             </div>
         </div>
 
@@ -263,31 +249,4 @@
         event.target.style.color = '#a78bfa';
     }
 
-    async function createUser(event) {
-        event.preventDefault();
-
-        const username = document.getElementById('newUsername').value;
-        const email = document.getElementById('newEmail').value;
-        const role = document.getElementById('newRole').value;
-
-        try {
-            const response = await fetch('/api/admin/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, role })
-            });
-
-            if (response.ok) {
-                const user = await response.json();
-                alert(`Benutzer erstellt!\n\nBenutzername: ${user.username}\nTemporäres Passwort: ${user.tempPassword}`);
-                location.reload();
-            } else {
-                const error = await response.json();
-                alert('Fehler: ' + error.error);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Ein Fehler ist aufgetreten');
-        }
-    }
 </script>

@@ -26,6 +26,8 @@ Eine moderne, sichere Verwaltungsanwendung für die Schulprojektwoche MWG 2026 m
 
 ## ⚙️ Installation
 
+Für Vercel reicht ein Deployment über den Ordner mit [api/index.js](api/index.js).
+
 ### 1. Abhängigkeiten installieren
 ```bash
 npm install

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= project ? 'Projekt bearbeiten' : 'Neues Projekt' %> - Projektwoche MWG 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         * {
             border-radius: 0 !important;
@@ -57,15 +58,21 @@
 
 <!-- Content -->
 <div>
-    <div class="mb-8">
-        <h1 class="text-4xl font-bold text-white mb-2">
+    <div class="page-header mb-8">
+        <div>
+            <h1 class="page-title text-4xl font-bold mb-2">
             <% if (project) { %>
                 ✏️ Projekt bearbeiten
             <% } else { %>
                 ➕ Neues Projekt
             <% } %>
         </h1>
-        <p class="text-gray-400">Fülle die Projektdetails aus</p>
+        <p class="page-subtitle">Fülle die Projektdetails aus</p>
+        </div>
+        <div class="page-actions">
+            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+            <a href="/projekte" class="btn-secondary">← Zurück</a>
+        </div>
     </div>
 
     <div class="max-w-2xl">

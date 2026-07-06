@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Projektwoche MWG 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         :root {
             --color-dark-base: #0a0f1e;
@@ -93,6 +94,10 @@
 </head>
 <body>
     <div class="min-h-screen p-8">
+        <div class="page-actions mb-6">
+            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+            <a href="/logout" class="btn-secondary">🚪 Abmelden</a>
+        </div>
 
 <!-- Content -->
 <div>
@@ -105,18 +110,9 @@
         </p>
     </div>
 
-    <% if (user.role === 'admin' || user.role === 'projekt-verwaltung') { %>
+    <% if (user.role === 'admin') { %>
         <!-- Admin Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <a href="/projekte" class="dashboard-card no-underline">
-                <div class="card-icon">📋</div>
-                <h2 class="text-xl font-bold text-white mb-2">Projekte</h2>
-                <p class="text-gray-300 text-sm mb-4">
-                    Verwalte und organisiere alle Schulprojekte
-                </p>
-                <span class="card-link">Zu den Projekten →</span>
-            </a>
-
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <a href="/zeitplan" class="dashboard-card no-underline">
                 <div class="card-icon">⏰</div>
                 <h2 class="text-xl font-bold text-white mb-2">Zeitplan</h2>
@@ -137,28 +133,6 @@
         </div>
     <% } %>
 
-    <% if (user.role === 'bühnentechnik') { %>
-        <!-- Stage Tech Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <a href="/zeitplan" class="dashboard-card no-underline">
-                <div class="card-icon">⏰</div>
-                <h2 class="text-xl font-bold text-white mb-2">Zeitplan</h2>
-                <p class="text-gray-300 text-sm mb-4">
-                    Verwende und verwalte Bühnenzeit-Slots
-                </p>
-                <span class="card-link">Zum Zeitplan →</span>
-            </a>
-
-            <a href="/gelande" class="dashboard-card no-underline">
-                <div class="card-icon">🗺️</div>
-                <h2 class="text-xl font-bold text-white mb-2">Gelände</h2>
-                <p class="text-gray-300 text-sm mb-4">
-                    Verwalte die Bühne und Stände
-                </p>
-                <span class="card-link">Zum Gelände →</span>
-            </a>
-        </div>
-    <% } %>
 
     <!-- Universal Dashboard Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -180,23 +154,6 @@
             <span class="card-link">Zeitplan anschauen →</span>
         </a>
 
-        <a href="/gelande" class="dashboard-card no-underline">
-            <div class="card-icon">🗺️</div>
-            <h2 class="text-xl font-bold text-white mb-2">Gelände</h2>
-            <p class="text-gray-300 text-sm mb-4">
-                Visualisierung der Standaufteilung
-            </p>
-            <span class="card-link">Gelände anschauen →</span>
-        </a>
-
-        <a href="/kanban" class="dashboard-card no-underline">
-            <div class="card-icon">📌</div>
-            <h2 class="text-xl font-bold text-white mb-2">Kanban</h2>
-            <p class="text-gray-300 text-sm mb-4">
-                Verwende Aufgaben-Management-System
-            </p>
-            <span class="card-link">Kanban öffnen →</span>
-        </a>
     </div>
 
     <!-- System Info -->
