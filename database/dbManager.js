@@ -46,6 +46,12 @@ function copySourceFiles(destDir) {
 function chooseDataDir() {
   const preferTemp = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
+  if (preferTemp && !connectionString) {
+    console.warn('[Persistence Warning] Running without DATABASE_URL/NEON_DATABASE_URL in production.');
+    console.warn('[Persistence Warning] JSON files are stored in /tmp and can be reset on redeploy/cold starts.');
+    console.warn('[Persistence Warning] Configure a persistent Postgres database for durable data.');
+  }
+
   if (preferTemp && ensureDirectory(TEMP_DATA_DIR)) {
     copySourceFiles(TEMP_DATA_DIR);
     return TEMP_DATA_DIR;
@@ -205,11 +211,11 @@ class DatabaseManager {
   }
 
   async initializeDefaults() {
-    if (this.useNeon) {
-      await this.createTables();
-    }
-
     try {
+      if (this.useNeon) {
+        await this.createTables();
+      }
+
       if (!readJsonFileSync.call(this, 'users')) {
         const users = { users: [] };
         writeJsonFileSync.call(this, 'users', users);
@@ -229,7 +235,12 @@ class DatabaseManager {
 
       await this.ensureDefaultUsers();
     } catch (error) {
-      console.error('Error initializing database:', error.message);
+      console.error('Error initializing database:', {
+        message: error.message,
+        useNeon: this.useNeon,
+        hasDatabaseUrl: Boolean(process.env.DATABASE_URL || process.env.NEON_DATABASE_URL)
+      });
+      throw error;
     }
   }
 

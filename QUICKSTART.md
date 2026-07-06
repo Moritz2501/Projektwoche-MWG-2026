@@ -64,6 +64,16 @@ Das Projekt ist jetzt vollständig lokal betriebsfähig!
 - Für lokale Entwicklung: Nutze `npm run dev`.
 - Für Produktion: Nutze `npm start`.
 
+### Wichtig für Vercel
+
+Ohne `NEON_DATABASE_URL` oder `DATABASE_URL` werden Daten in einer temporären Umgebung gespeichert und können nach Redeploy verloren gehen.
+
+Für dauerhafte Daten auf Vercel:
+
+1. PostgreSQL (z. B. Neon) anlegen.
+2. In Vercel Project Settings setzen: `NEON_DATABASE_URL` (oder `DATABASE_URL`).
+3. Deployment neu ausführen.
+
 ---
 
 **Entwicklung**: Nutze `npm run dev` für schnelle Iterationen  

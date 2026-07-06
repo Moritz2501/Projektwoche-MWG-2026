@@ -71,6 +71,24 @@ npm start
 
 Der Server läuft dann unter `http://localhost:3000`
 
+## Persistenz auf Vercel
+
+Wichtig: Ohne externe Datenbank sind Daten nach Redeploys auf Vercel nicht dauerhaft.
+
+- Lokal: JSON-Dateien funktionieren dauerhaft in `database/data/`.
+- Vercel/Production ohne DB-URL: Speicherung erfolgt in `/tmp` und kann bei Redeploy oder Cold Start zurückgesetzt werden.
+- Dauerhafte Lösung: PostgreSQL (z. B. Neon) anbinden.
+
+### Erforderliche Vercel Environment Variables für Persistenz
+
+- `NEON_DATABASE_URL` oder `DATABASE_URL`
+- `SESSION_SECRET`
+- `ENCRYPTION_KEY`
+- `ADMIN_USER`, `ADMIN_PASS_HASH`
+- `USER_USER`, `USER_PASS_HASH`
+
+Sobald `NEON_DATABASE_URL` oder `DATABASE_URL` gesetzt ist, nutzt die App automatisch PostgreSQL und die Daten bleiben über Deployments hinweg erhalten.
+
 ## 🔐 Sicherheit
 
 ### Admin-Benutzer
