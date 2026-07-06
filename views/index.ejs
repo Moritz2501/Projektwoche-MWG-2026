@@ -68,6 +68,26 @@
             font-weight: bold;
             display: inline-block;
         }
+
+        .project-filter-btn {
+            background: rgba(120, 13, 22, 0.12);
+            color: #780d16;
+            border: 1px solid rgba(120, 13, 22, 0.35);
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .project-filter-btn:hover {
+            background: rgba(120, 13, 22, 0.2);
+            border-color: rgba(120, 13, 22, 0.5);
+        }
+
+        .project-filter-btn.active {
+            background: linear-gradient(135deg, #780d16 0%, #5f0a11 100%);
+            border-color: rgba(120, 13, 22, 0.8);
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
@@ -140,9 +160,17 @@
                 <h2 class="text-3xl font-bold text-white mb-6">Projekte</h2>
 
                 <% if (projects && projects.length > 0) { %>
+                    <div class="flex gap-3 mb-4">
+                        <button type="button" class="project-filter-btn" data-filter-type="stage-time-slot">
+                            Bühne
+                        </button>
+                        <button type="button" class="project-filter-btn" data-filter-type="booth">
+                            Stand
+                        </button>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <% projects.forEach(project => { %>
-                            <div class="glass-panel dashboard-card p-6">
+                            <div class="glass-panel dashboard-card p-6" data-project-type="<%= project.presentationType %>">
                                 <h3 class="text-lg font-semibold text-white mb-2">
                                     <%= project.name %>
                                 </h3>
@@ -182,6 +210,30 @@
     </div>
 
     <script>
+            let activeProjectFilter = null;
+
+            function applyProjectFilter() {
+                const projectCards = document.querySelectorAll('[data-project-type]');
+
+                projectCards.forEach((card) => {
+                    const cardType = card.getAttribute('data-project-type');
+                    card.style.display = !activeProjectFilter || cardType === activeProjectFilter ? '' : 'none';
+                });
+
+                document.querySelectorAll('.project-filter-btn').forEach((button) => {
+                    const buttonType = button.getAttribute('data-filter-type');
+                    button.classList.toggle('active', buttonType === activeProjectFilter);
+                });
+            }
+
+            document.querySelectorAll('.project-filter-btn').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const selectedType = button.getAttribute('data-filter-type');
+                    activeProjectFilter = activeProjectFilter === selectedType ? null : selectedType;
+                    applyProjectFilter();
+                });
+            });
+
         // Auto-refresh every 30 seconds
         setTimeout(() => {
             location.reload();
