@@ -76,8 +76,11 @@ Der Server läuft dann unter `http://localhost:3000`
 Wichtig: Ohne externe Datenbank sind Daten nach Redeploys auf Vercel nicht dauerhaft.
 
 - Lokal: JSON-Dateien funktionieren dauerhaft in `database/data/`.
-- Vercel/Production ohne DB-URL: Speicherung erfolgt in `/tmp` und kann bei Redeploy oder Cold Start zurückgesetzt werden.
+- Vercel ohne DB-URL: Standardmaessig startet die App nicht mehr, um stillen Datenverlust zu verhindern.
 - Dauerhafte Lösung: PostgreSQL (z. B. Neon) anbinden.
+
+Nur fuer temporaere Tests kannst du auf Vercel `ALLOW_EPHEMERAL_STORAGE=1` setzen.
+Dann wird in `/tmp` gespeichert, aber Daten gehen bei Redeploy/Cold Start verloren.
 
 ### Erforderliche Vercel Environment Variables für Persistenz
 

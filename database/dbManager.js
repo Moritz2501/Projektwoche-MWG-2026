@@ -10,6 +10,8 @@ const __dirname = path.dirname(__filename);
 const SOURCE_DATA_DIR = path.join(__dirname, 'data');
 const TEMP_DATA_DIR = path.join('/tmp', 'projektwoche-mwg-2026-data');
 const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || '';
+const isVercelRuntime = process.env.VERCEL === '1';
+const allowEphemeralStorage = process.env.ALLOW_EPHEMERAL_STORAGE === '1';
 const pool = connectionString
   ? new Pool({
       connectionString,
@@ -44,9 +46,17 @@ function copySourceFiles(destDir) {
 }
 
 function chooseDataDir() {
-  const preferTemp = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  const preferTemp = isVercelRuntime || process.env.NODE_ENV === 'production';
 
   if (preferTemp && !connectionString) {
+    if (isVercelRuntime && !allowEphemeralStorage) {
+      throw new Error(
+        'Missing DATABASE_URL/NEON_DATABASE_URL on Vercel. ' +
+        'Set a persistent Postgres database to avoid data loss on redeploys. ' +
+        'Only for testing, set ALLOW_EPHEMERAL_STORAGE=1 to allow /tmp storage.'
+      );
+    }
+
     console.warn('[Persistence Warning] Running without DATABASE_URL/NEON_DATABASE_URL in production.');
     console.warn('[Persistence Warning] JSON files are stored in /tmp and can be reset on redeploy/cold starts.');
     console.warn('[Persistence Warning] Configure a persistent Postgres database for durable data.');
@@ -226,6 +236,13 @@ class DatabaseManager {
         try {
           await this.createTables();
         } catch (dbError) {
+          if (isVercelRuntime && !allowEphemeralStorage) {
+            throw new Error(
+              `PostgreSQL initialization failed on Vercel: ${dbError?.message || 'unknown error'}. ` +
+              'Fix DATABASE_URL/NEON_DATABASE_URL or set ALLOW_EPHEMERAL_STORAGE=1 only for temporary testing.'
+            );
+          }
+
           console.error('PostgreSQL initialization failed, falling back to local encrypted JSON storage:', {
             message: dbError?.message,
             hasDatabaseUrl: Boolean(process.env.DATABASE_URL || process.env.NEON_DATABASE_URL)
@@ -236,21 +253,23 @@ class DatabaseManager {
         }
       }
 
-      if (!readJsonFileSync.call(this, 'users')) {
-        const users = { users: [] };
-        writeJsonFileSync.call(this, 'users', users);
-      }
+      if (!this.useNeon) {
+        if (!readJsonFileSync.call(this, 'users')) {
+          const users = { users: [] };
+          writeJsonFileSync.call(this, 'users', users);
+        }
 
-      if (!readJsonFileSync.call(this, 'projects')) {
-        writeJsonFileSync.call(this, 'projects', { projects: [] });
-      }
+        if (!readJsonFileSync.call(this, 'projects')) {
+          writeJsonFileSync.call(this, 'projects', { projects: [] });
+        }
 
-      if (!readJsonFileSync.call(this, 'schedule')) {
-        writeJsonFileSync.call(this, 'schedule', { slots: [] });
-      }
+        if (!readJsonFileSync.call(this, 'schedule')) {
+          writeJsonFileSync.call(this, 'schedule', { slots: [] });
+        }
 
-      if (!readJsonFileSync.call(this, 'logs')) {
-        writeJsonFileSync.call(this, 'logs', { logs: [] });
+        if (!readJsonFileSync.call(this, 'logs')) {
+          writeJsonFileSync.call(this, 'logs', { logs: [] });
+        }
       }
 
       await this.ensureDefaultUsers();
