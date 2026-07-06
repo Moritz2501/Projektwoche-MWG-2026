@@ -5,12 +5,6 @@
       "runtime": "nodejs24.x"
     }
   },
-  "builds": [
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
     {
       "src": "/(.*)",
