@@ -107,7 +107,7 @@
             display: none;
         }
 
-        @media (max-width: 1024px) {
+        @media (max-width: 767px) {
             .sidebar-nav {
                 position: fixed;
                 top: 0;
@@ -305,7 +305,7 @@
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebarClose = document.getElementById('sidebarClose');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-            const mobileQuery = window.matchMedia('(max-width: 1024px)');
+            const mobileQuery = window.matchMedia('(max-width: 767px)');
 
             const setSidebarState = (isOpen) => {
                 if (!sidebar || !sidebarBackdrop) {
