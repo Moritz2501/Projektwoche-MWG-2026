@@ -179,6 +179,19 @@ app.get('/projekte/neu', async (req, res) => {
   res.render('projects/form', { project: null });
 });
 
+app.get('/projekte/batch', async (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.redirect('/login');
+  }
+
+  const { hasPermission } = await import('./middleware/rbac.js');
+  if (!hasPermission(req.session.user.role, 'projects:create')) {
+    return res.status(403).render('error', { message: 'Zugriff verweigert' });
+  }
+
+  res.render('projects/batch');
+});
+
 app.post('/api/projects', async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
@@ -213,6 +226,67 @@ app.post('/api/projects', async (req, res) => {
     res.json(project);
   } catch (error) {
     console.error('Project creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Batch project creation
+app.post('/api/projects/batch', async (req, res) => {
+  try {
+    if (!req.session || !req.session.user) {
+      return res.status(401).json({ error: 'Nicht authentifiziert' });
+    }
+
+    const { hasPermission } = await import('./middleware/rbac.js');
+    if (!hasPermission(req.session.user.role, 'projects:create')) {
+      return res.status(403).json({ error: 'Keine Berechtigung' });
+    }
+
+    const { projects } = req.body;
+
+    if (!Array.isArray(projects) || projects.length === 0) {
+      return res.status(400).json({ error: 'Keine Projekte zum Erstellen vorhanden' });
+    }
+
+    let createdCount = 0;
+    const errors = [];
+
+    for (const projectData of projects) {
+      try {
+        const { name, description, supervisors, memberCount, presentationType } = projectData;
+
+        if (!name || !description) {
+          errors.push(`Projekt "${name || 'unnamed'}": Name und Beschreibung erforderlich`);
+          continue;
+        }
+
+        const project = db.createProject({
+          name,
+          description,
+          supervisors: supervisors ? (typeof supervisors === 'string' ? supervisors.split(',').map(s => s.trim()) : supervisors) : [],
+          memberCount: parseInt(memberCount) || 0,
+          presentationType: presentationType || 'booth'
+        });
+
+        db.addLog({
+          action: 'project_created',
+          userId: req.session.user.id,
+          details: `Created project (batch): ${name}`
+        });
+
+        createdCount++;
+      } catch (err) {
+        errors.push(`Fehler bei Projekt: ${err.message}`);
+      }
+    }
+
+    res.json({ 
+      created: createdCount, 
+      total: projects.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Batch project creation error:', error);
     res.status(500).json({ error: error.message });
   }
 });

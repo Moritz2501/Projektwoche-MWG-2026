@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        * {
+            border-radius: 0 !important;
+        }
+
         :root {
             --color-dark-base: #0a0f1e;
             --color-deep-purple: #2d0a4e;
@@ -24,66 +28,49 @@
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.75rem;
         }
 
-        .dashboard-card {
-            background: rgba(255, 255, 255, 0.05);
+        .glass-panel-dark {
+            background: rgba(10, 15, 30, 0.4);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2rem;
-            transition: all 0.3s ease;
-            border-radius: 0.75rem;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .dashboard-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
-            transform: translateY(-4px);
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .card-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .card-link {
-            color: #a78bfa;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-block;
-        }
-
-        .card-link:hover {
-            color: #c4b5fd;
-            transform: translateX(4px);
         }
 
         .nav-link {
+            padding: 0.75rem 1.25rem;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: var(--color-accent);
+            color: #a78bfa;
+        }
+
+        .back-home-link {
             color: #a78bfa;
             text-decoration: none;
             transition: all 0.3s ease;
-            padding: 0.5rem 0;
+            padding: 0.75rem 1.25rem;
+            display: block;
         }
 
-        .nav-link:hover {
+        .back-home-link:hover {
             color: #c4b5fd;
         }
 
         .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
             color: #e5e7eb;
             padding: 0.75rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             transition: all 0.3s ease;
-            border-radius: 0.5rem;
             text-decoration: none;
-            display: inline-block;
+            display: block;
+            text-align: center;
+            border-radius: 0.5rem;
         }
 
         .btn-secondary:hover {
@@ -93,92 +80,200 @@
     </style>
 </head>
 <body>
-    <div class="min-h-screen p-8">
-        <div class="page-actions mb-6">
-            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
-            <a href="/logout" class="btn-secondary">🚪 Abmelden</a>
-        </div>
+    <div class="flex min-h-screen">
+        <!-- Sidebar Navigation -->
+        <nav class="w-64 glass-panel-dark border-r border-white/10 p-6 flex flex-col">
+            <div class="mb-8">
+                <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600">
+                    MWG 2026
+                </h1>
+                <p class="text-sm text-gray-400 mt-2">Projektwoche Management</p>
+            </div>
 
-<!-- Content -->
-<div>
-    <div class="mb-8">
-        <h1 class="text-4xl font-bold text-white mb-2">
-            👋 Willkommen zurück, <%= user.username %>!
-        </h1>
-        <p class="text-gray-400">
-            Übersicht und schneller Zugriff auf alle Funktionen
-        </p>
+            <div class="flex-1">
+                <div class="space-y-2">
+                    <a href="/dashboard" class="nav-link block text-gray-300 hover:text-white">
+                        📊 Dashboard
+                    </a>
+                    <a href="/projekte" class="nav-link block text-gray-300 hover:text-white">
+                        📋 Projekte
+                    </a>
+                    <a href="/zeitplan" class="nav-link block text-gray-300 hover:text-white">
+                        ⏰ Zeitplan
+                    </a>
+                    <% if (user && user.role === 'admin') { %>
+                        <a href="/verwaltung" class="nav-link block text-gray-300 hover:text-white">
+                            🔧 Verwaltung
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="border-t border-white/10 pt-4">
+                <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+                <div class="glass-panel p-4 mb-4">
+                    <p class="text-xs text-gray-400">Benutzer</p>
+                    <p class="text-sm font-semibold text-white mt-1"><%= user.username %></p>
+                    <p class="text-xs text-purple-400 mt-1 capitalize"><%= user.role %></p>
+                </div>
+                <a href="/logout" class="btn-secondary">
+                    🚪 Abmelden
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-auto">
+            <div class="p-8">
+                <!-- Dashboard Content -->
+                <div>
+                    <div class="mb-8">
+                        <h1 class="text-4xl font-bold text-white mb-2">
+                            👋 Willkommen zurück, <%= user.username %>!
+                        </h1>
+                        <p class="text-gray-400">
+                            Übersicht und schneller Zugriff auf alle Funktionen
+                        </p>
+                    </div>
+
+                    <% if (user.role === 'admin') { %>
+                        <!-- Admin Dashboard -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <a href="/projekte" class="glass-panel p-6 hover:bg-white/8 transition text-decoration-none cursor-pointer block">
+                                <div style="font-size: 2.5rem; margin-bottom: 1rem;">📋</div>
+                                <h2 class="text-xl font-bold text-white mb-2">Projekte</h2>
+                                <p class="text-gray-300 text-sm mb-4">
+                                    Erstelle und bearbeite Schulprojekte
+                                </p>
+                                <span class="text-purple-400">Zu den Projekten →</span>
+                            </a>
+
+                            <a href="/zeitplan" class="glass-panel p-6 hover:bg-white/8 transition text-decoration-none cursor-pointer block">
+                                <div style="font-size: 2.5rem; margin-bottom: 1rem;">⏰</div>
+                                <h2 class="text-xl font-bold text-white mb-2">Zeitplan</h2>
+                                <p class="text-gray-300 text-sm mb-4">
+                                    Erstelle und bearbeite Zeitplan-Slots
+                                </p>
+                                <span class="text-purple-400">Zum Zeitplan →</span>
+                            </a>
+
+                            <a href="/gelande" class="glass-panel p-6 hover:bg-white/8 transition text-decoration-none cursor-pointer block">
+                                <div style="font-size: 2.5rem; margin-bottom: 1rem;">🗺️</div>
+                                <h2 class="text-xl font-bold text-white mb-2">Gelände</h2>
+                                <p class="text-gray-300 text-sm mb-4">
+                                    Verwalte Stände und Bühne auf dem Gelände
+                                </p>
+                                <span class="text-purple-400">Zum Gelände →</span>
+                            </a>
+
+                            <a href="/kanban" class="glass-panel p-6 hover:bg-white/8 transition text-decoration-none cursor-pointer block">
+                                <div style="font-size: 2.5rem; margin-bottom: 1rem;">📌</div>
+                                <h2 class="text-xl font-bold text-white mb-2">Kanban Board</h2>
+                                <p class="text-gray-300 text-sm mb-4">
+                                    Verwalte Aufgaben und Prozesse
+                                </p>
+                                <span class="text-purple-400">Zum Kanban →</span>
+                            </a>
+
+                            <a href="/verwaltung" class="glass-panel p-6 hover:bg-white/8 transition text-decoration-none cursor-pointer block">
+                                <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔧</div>
+                                <h2 class="text-xl font-bold text-white mb-2">Verwaltung</h2>
+                                <p class="text-gray-300 text-sm mb-4">
+                                    Verwalte Benutzer und Systemlogs
+                                </p>
+                                <span class="text-purple-400">Zur Verwaltung →</span>
+                            </a>
+                        </div>
+                    <% } %>
+
+                    <% if (user.role !== 'admin') { %>
+                        <!-- User Dashboard -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <a href="/projekte" class="glass-panel p-6 hover:bg-white/8 transition text-decoration-none cursor-pointer block">
+                                <div style="font-size: 2.5rem; margin-bottom: 1rem;">📋</div>
+                                <h2 class="text-xl font-bold text-white mb-2">Projekte</h2>
+                                <p class="text-gray-300 text-sm mb-4">
+                                    Übersicht aller teilnehmenden Projekte
+                                </p>
+                                <span class="text-purple-400">Projekte anschauen →</span>
+                            </a>
+
+                            <a href="/zeitplan" class="glass-panel p-6 hover:bg-white/8 transition text-decoration-none cursor-pointer block">
+                                <div style="font-size: 2.5rem; margin-bottom: 1rem;">⏰</div>
+                                <h2 class="text-xl font-bold text-white mb-2">Zeitplan</h2>
+                                <p class="text-gray-300 text-sm mb-4">
+                                    Aktuelle Zeitplanungs-Informationen
+                                </p>
+                                <span class="text-purple-400">Zeitplan anschauen →</span>
+                            </a>
+
+                            <a href="/kanban" class="glass-panel p-6 hover:bg-white/8 transition text-decoration-none cursor-pointer block">
+                                <div style="font-size: 2.5rem; margin-bottom: 1rem;">📌</div>
+                                <h2 class="text-xl font-bold text-white mb-2">Kanban Board</h2>
+                                <p class="text-gray-300 text-sm mb-4">
+                                    Verwalte deine Aufgaben
+                                </p>
+                                <span class="text-purple-400">Zum Kanban →</span>
+                            </a>
+                        </div>
+                    <% } %>
+
+                    <!-- System Info -->
+                    <div class="glass-panel p-6 mt-8">
+                        <h3 class="text-lg font-semibold text-white mb-3">📋 Systeminformationen</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <p class="text-xs text-gray-400">Deine Rolle</p>
+                                <p class="text-sm font-semibold text-purple-300 capitalize"><%= user.role %></p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400">Benutzername</p>
+                                <p class="text-sm font-semibold text-gray-200"><%= user.username %></p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400">System</p>
+                                <p class="text-sm font-semibold text-gray-200">MWG 2026</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400">Status</p>
+                                <p class="text-sm font-semibold text-green-400">🟢 Online</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <% if (user.role === 'admin') { %>
-        <!-- Admin Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <a href="/zeitplan" class="dashboard-card no-underline">
-                <div class="card-icon">⏰</div>
-                <h2 class="text-xl font-bold text-white mb-2">Zeitplan</h2>
-                <p class="text-gray-300 text-sm mb-4">
-                    Erstelle und bearbeite Zeitplan-Slots
-                </p>
-                <span class="card-link">Zum Zeitplan →</span>
-            </a>
-
-            <a href="/verwaltung" class="dashboard-card no-underline">
-                <div class="card-icon">🔧</div>
-                <h2 class="text-xl font-bold text-white mb-2">Verwaltung</h2>
-                <p class="text-gray-300 text-sm mb-4">
-                    Verwalte Benutzer und Systemlogs
-                </p>
-                <span class="card-link">Zur Verwaltung →</span>
-            </a>
-        </div>
-    <% } %>
-
-
-    <!-- Universal Dashboard Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <a href="/projekte" class="dashboard-card no-underline">
-            <div class="card-icon">📊</div>
-            <h2 class="text-xl font-bold text-white mb-2">Projekte</h2>
-            <p class="text-gray-300 text-sm mb-4">
-                Übersicht aller teilnehmenden Projekte
-            </p>
-            <span class="card-link">Projekte anschauen →</span>
-        </a>
-
-        <a href="/zeitplan" class="dashboard-card no-underline">
-            <div class="card-icon">📅</div>
-            <h2 class="text-xl font-bold text-white mb-2">Zeitplan</h2>
-            <p class="text-gray-300 text-sm mb-4">
-                Aktuelle Zeitplanungs-Informationen
-            </p>
-            <span class="card-link">Zeitplan anschauen →</span>
-        </a>
-
-    </div>
-
-    <!-- System Info -->
-    <div class="glass-panel p-6 mt-8">
-        <h3 class="text-lg font-semibold text-white mb-3">📋 Systeminformationen</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-                <p class="text-xs text-gray-400">Deine Rolle</p>
-                <p class="text-sm font-semibold text-purple-300 capitalize"><%= user.role %></p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-400">Benutzername</p>
-                <p class="text-sm font-semibold text-gray-200"><%= user.username %></p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-400">System</p>
-                <p class="text-sm font-semibold text-gray-200">MWG 2026</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-400">Status</p>
-                <p class="text-sm font-semibold text-green-400">🟢 Online</p>
-            </div>
-        </div>
-    </div>
-</div>
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (link.href && !link.target && link.hostname === window.location.hostname) {
+                        // Optional: Add transition effect
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
+
+<style>
+    a[href]:not([href^="javascript"]) {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .text-decoration-none {
+        text-decoration: none;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .block {
+        display: block;
+    }
+</style>

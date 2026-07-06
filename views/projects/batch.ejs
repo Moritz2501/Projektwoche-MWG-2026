@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mehrere Projekte importieren - Projektwoche MWG 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        * {
+            border-radius: 0 !important;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(124, 58, 237, 0.5);
+            outline: none;
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(124, 58, 237, 0.5);
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: #d1d5db;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+        }
+
+        .project-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0.5rem;
+        }
+
+        .project-item.valid {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .project-item.invalid {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .project-item input {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #e5e7eb;
+            padding: 0.5rem;
+            width: 100%;
+            margin-bottom: 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .project-item input:focus {
+            outline: none;
+            border-color: rgba(124, 58, 237, 0.3);
+            background: rgba(124, 58, 237, 0.05);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: #a78bfa;
+            border-bottom: 2px solid #a78bfa;
+        }
+
+        .tab-btn:hover {
+            color: #d1d5db;
+        }
+
+        textarea.input-field {
+            resize: vertical;
+            min-height: 300px;
+            font-family: monospace;
+        }
+
+        .import-format-hint {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: #93c5fd;
+        }
+
+        .success-badge {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #86efac;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        .error-badge {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+</body>
+</html>
+
+<!-- Content -->
+<div>
+    <div class="page-header mb-8">
+        <div>
+            <h1 class="page-title text-4xl font-bold mb-2">📚 Mehrere Projekte importieren</h1>
+            <p class="page-subtitle">Geben Sie mehrere Projekte auf einmal ein oder importieren Sie aus CSV</p>
+        </div>
+        <div class="page-actions">
+            <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
+            <a href="/projekte" class="btn-secondary">← Zurück</a>
+        </div>
+    </div>
+
+    <div class="max-w-6xl">
+        <!-- Tabs -->
+        <div class="flex gap-4 mb-8 border-b border-white/10">
+            <button onclick="switchTab('form')" class="tab-btn active">📝 Formular</button>
+            <button onclick="switchTab('csv')" class="tab-btn">📊 CSV Import</button>
+        </div>
+
+        <!-- Form Tab -->
+        <div id="form-tab" class="tab-content">
+            <div class="glass-panel p-8">
+                <h3 class="text-xl font-bold text-white mb-4">Projekte eingeben</h3>
+                <p class="text-gray-400 mb-6">Geben Sie beliebig viele Projekte nacheinander ein. Klicken Sie "Projekt hinzufügen" um weitere Felder zu erstellen.</p>
+                
+                <div id="projects-container"></div>
+                
+                <div class="mt-6 flex gap-4">
+                    <button onclick="addProjectForm()" class="btn-primary">➕ Projekt hinzufügen</button>
+                    <button onclick="submitProjects()" class="btn-primary" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border-color: rgba(5, 150, 105, 0.5);">
+                        ✅ Alle Projekte speichern
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CSV Tab -->
+        <div id="csv-tab" class="tab-content hidden">
+            <div class="glass-panel p-8">
+                <h3 class="text-xl font-bold text-white mb-4">CSV Import</h3>
+                
+                <div class="import-format-hint">
+                    <strong>Format:</strong><br>
+                    name | description | supervisors | memberCount | presentationType<br>
+                    <span style="opacity: 0.7;">Beispiel: Robotik | Ein Projekt über Robotik | Herr Müller, Frau Schmidt | 5 | booth</span><br>
+                    <strong>Hinweis:</strong> presentationType: "booth" oder "stage-time-slot"
+                </div>
+
+                <textarea id="csv-input" class="input-field" placeholder="Projekte hier einfügen (ein Projekt pro Zeile)..."></textarea>
+
+                <div class="mt-6 flex gap-4">
+                    <button onclick="previewCSV()" class="btn-secondary">👁️ Vorschau</button>
+                    <button onclick="submitCSV()" class="btn-primary" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border-color: rgba(5, 150, 105, 0.5);">
+                        ✅ Alle Projekte importieren
+                    </button>
+                </div>
+            </div>
+
+            <!-- CSV Preview -->
+            <div id="csv-preview" class="hidden mt-6 glass-panel p-8">
+                <h3 class="text-lg font-bold text-white mb-4">📋 Vorschau</h3>
+                <div id="preview-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize with one empty form
+    document.addEventListener('DOMContentLoaded', () => {
+        addProjectForm();
+    });
+
+    function switchTab(tabName) {
+        // Hide all tabs
+        document.getElementById('form-tab').classList.add('hidden');
+        document.getElementById('csv-tab').classList.add('hidden');
+
+        // Remove active state
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+        // Show selected tab
+        if (tabName === 'form') {
+            document.getElementById('form-tab').classList.remove('hidden');
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        } else {
+            document.getElementById('csv-tab').classList.remove('hidden');
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        }
+    }
+
+    let projectCount = 0;
+
+    function addProjectForm() {
+        const container = document.getElementById('projects-container');
+        const index = projectCount++;
+        
+        const formHTML = `
+            <div id="project-${index}" class="project-item">
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="text-white font-semibold">Projekt ${index + 1}</h4>
+                    <button type="button" onclick="removeProjectForm(${index})" class="text-red-400 hover:text-red-300 text-sm">
+                        ✕ Entfernen
+                    </button>
+                </div>
+                
+                <input type="text" placeholder="Projektname *" class="project-name" required>
+                <input type="text" placeholder="Beschreibung *" class="project-description" required>
+                <input type="text" placeholder="Betreuer (durch Komma getrennt)" class="project-supervisors">
+                <input type="number" placeholder="Anzahl Teilnehmer" class="project-memberCount" value="1" min="1">
+                
+                <select class="project-presentationType">
+                    <option value="booth">🏪 Stand</option>
+                    <option value="stage-time-slot">🎭 Bühnen-Zeitslot</option>
+                </select>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', formHTML);
+    }
+
+    function removeProjectForm(index) {
+        const element = document.getElementById(`project-${index}`);
+        if (element) {
+            element.remove();
+        }
+    }
+
+    async function submitProjects() {
+        const projects = [];
+        const projectItems = document.querySelectorAll('.project-item');
+
+        projectItems.forEach((item, idx) => {
+            const name = item.querySelector('.project-name').value.trim();
+            const description = item.querySelector('.project-description').value.trim();
+            
+            if (!name || !description) {
+                alert(`Projekt ${idx + 1}: Name und Beschreibung sind erforderlich!`);
+                return;
+            }
+
+            projects.push({
+                name,
+                description,
+                supervisors: item.querySelector('.project-supervisors').value.trim(),
+                memberCount: parseInt(item.querySelector('.project-memberCount').value) || 1,
+                presentationType: item.querySelector('.project-presentationType').value
+            });
+        });
+
+        if (projects.length === 0) {
+            alert('Bitte geben Sie mindestens ein Projekt ein!');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/projects/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projects })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                alert(`✅ ${result.created} Projekt(e) erfolgreich erstellt!`);
+                window.location.href = '/projekte';
+            } else {
+                const error = await response.json();
+                alert('Fehler: ' + error.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten');
+        }
+    }
+
+    function previewCSV() {
+        const csv = document.getElementById('csv-input').value.trim();
+        if (!csv) {
+            alert('Bitte geben Sie CSV-Daten ein!');
+            return;
+        }
+
+        const projects = [];
+        const lines = csv.split('\n').filter(line => line.trim());
+        
+        lines.forEach((line, idx) => {
+            const parts = line.split('|').map(p => p.trim());
+            if (parts.length >= 5) {
+                projects.push({
+                    index: idx + 1,
+                    name: parts[0],
+                    description: parts[1],
+                    supervisors: parts[2],
+                    memberCount: parts[3],
+                    presentationType: parts[4]
+                });
+            }
+        });
+
+        let preview = '<div class="space-y-3">';
+        projects.forEach(p => {
+            preview += `
+                <div class="glass-panel p-3">
+                    <p class="text-white font-semibold">${p.name}</p>
+                    <p class="text-gray-300 text-sm">${p.description}</p>
+                    <div class="text-xs text-gray-400 mt-2">
+                        👥 ${p.memberCount} | 👤 ${p.supervisors || '-'} | ${p.presentationType === 'booth' ? '🏪 Stand' : '🎭 Bühne'}
+                    </div>
+                </div>
+            `;
+        });
+        preview += '</div>';
+
+        document.getElementById('preview-content').innerHTML = preview;
+        document.getElementById('csv-preview').classList.remove('hidden');
+    }
+
+    async function submitCSV() {
+        const csv = document.getElementById('csv-input').value.trim();
+        if (!csv) {
+            alert('Bitte geben Sie CSV-Daten ein!');
+            return;
+        }
+
+        const projects = [];
+        const lines = csv.split('\n').filter(line => line.trim());
+        
+        lines.forEach((line, idx) => {
+            const parts = line.split('|').map(p => p.trim());
+            if (parts.length >= 5) {
+                projects.push({
+                    name: parts[0],
+                    description: parts[1],
+                    supervisors: parts[2],
+                    memberCount: parseInt(parts[3]) || 1,
+                    presentationType: parts[4]
+                });
+            }
+        });
+
+        if (projects.length === 0) {
+            alert('Keine gültigen Projekte gefunden! Überprüfen Sie das CSV-Format.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/projects/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projects })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                alert(`✅ ${result.created} Projekt(e) erfolgreich importiert!`);
+                window.location.href = '/projekte';
+            } else {
+                const error = await response.json();
+                alert('Fehler: ' + error.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten');
+        }
+    }
+</script>
