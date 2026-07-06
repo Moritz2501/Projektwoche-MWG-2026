@@ -9,9 +9,46 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SOURCE_DATA_DIR = path.join(__dirname, 'data');
 const TEMP_DATA_DIR = path.join('/tmp', 'projektwoche-mwg-2026-data');
-const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || '';
 const isVercelRuntime = process.env.VERCEL === '1';
 const allowEphemeralStorage = process.env.ALLOW_EPHEMERAL_STORAGE === '1';
+
+function isValidPostgresUrl(urlValue) {
+  if (!urlValue || typeof urlValue !== 'string') {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(urlValue);
+    const isPgProtocol = parsed.protocol === 'postgres:' || parsed.protocol === 'postgresql:';
+    return isPgProtocol && Boolean(parsed.hostname);
+  } catch (err) {
+    return false;
+  }
+}
+
+function resolveConnectionString() {
+  const candidates = [
+    ['DATABASE_URL', process.env.DATABASE_URL],
+    ['NEON_DATABASE_URL', process.env.NEON_DATABASE_URL]
+  ];
+
+  for (const [envName, rawValue] of candidates) {
+    const value = typeof rawValue === 'string' ? rawValue.trim() : '';
+    if (!value) {
+      continue;
+    }
+
+    if (isValidPostgresUrl(value)) {
+      return value;
+    }
+
+    console.error(`[Config Warning] ${envName} is set but not a valid Postgres URL. Ignoring this value.`);
+  }
+
+  return '';
+}
+
+const connectionString = resolveConnectionString();
 const pool = connectionString
   ? new Pool({
       connectionString,
