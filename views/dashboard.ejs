@@ -77,12 +77,92 @@
             background: rgba(255, 255, 255, 0.15);
             border-color: rgba(255, 255, 255, 0.3);
         }
+
+        .dashboard-shell {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar-nav {
+            width: 16rem;
+            transition: transform 0.25s ease;
+            z-index: 40;
+        }
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 30;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .mobile-topbar {
+            display: none;
+        }
+
+        .mobile-only {
+            display: none;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar-nav {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                width: min(80vw, 18rem);
+            }
+
+            .sidebar-nav.is-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-backdrop.is-open {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .mobile-topbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1rem;
+                padding: 0.75rem 1rem;
+            }
+
+            .mobile-only {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .content-compact {
+                padding: 1rem !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-heading {
+                font-size: 1.75rem;
+                line-height: 1.2;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="flex min-h-screen">
+    <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+    <div class="dashboard-shell">
         <!-- Sidebar Navigation -->
-        <nav class="w-64 sidebar-compact glass-panel-dark border-r border-white/10 p-6 flex flex-col">
+        <nav id="dashboardSidebar" class="sidebar-nav w-64 sidebar-compact glass-panel-dark border-r border-white/10 p-6 flex flex-col" aria-label="Hauptnavigation">
+            <div class="mobile-only mb-4 justify-end">
+                <button id="sidebarClose" type="button" class="btn-secondary" aria-label="Navigation schließen">
+                    Schließen
+                </button>
+            </div>
             <div class="mb-8">
                 <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600">
                     MWG 2026
@@ -124,10 +204,16 @@
         <!-- Main Content -->
         <main class="flex-1 overflow-auto">
             <div class="p-8 content-compact">
+                <div class="mobile-topbar glass-panel">
+                    <button id="sidebarToggle" type="button" class="btn-secondary" aria-expanded="false" aria-controls="dashboardSidebar">
+                        Menu
+                    </button>
+                    <span class="text-sm font-semibold text-white">Dashboard</span>
+                </div>
                 <!-- Dashboard Content -->
                 <div>
                     <div class="mb-8">
-                        <h1 class="text-4xl font-bold text-white mb-2">
+                        <h1 class="dashboard-heading text-4xl font-bold text-white mb-2">
                             Willkommen zurück, <%= user.username %>!
                         </h1>
                         <p class="text-gray-400">
@@ -215,6 +301,69 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('dashboardSidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarClose = document.getElementById('sidebarClose');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            const mobileQuery = window.matchMedia('(max-width: 1024px)');
+
+            const setSidebarState = (isOpen) => {
+                if (!sidebar || !sidebarBackdrop) {
+                    return;
+                }
+
+                sidebar.classList.toggle('is-open', isOpen);
+                sidebarBackdrop.classList.toggle('is-open', isOpen);
+                document.body.style.overflow = isOpen ? 'hidden' : '';
+
+                if (sidebarToggle) {
+                    sidebarToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                }
+            };
+
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', () => {
+                    const isOpen = sidebar.classList.contains('is-open');
+                    setSidebarState(!isOpen);
+                });
+            }
+
+            if (sidebarClose) {
+                sidebarClose.addEventListener('click', () => setSidebarState(false));
+            }
+
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener('click', () => setSidebarState(false));
+            }
+
+            if (sidebar) {
+                sidebar.querySelectorAll('a').forEach((link) => {
+                    link.addEventListener('click', () => {
+                        if (mobileQuery.matches) {
+                            setSidebarState(false);
+                        }
+                    });
+                });
+            }
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    setSidebarState(false);
+                }
+            });
+
+            const onViewportChange = (event) => {
+                if (!event.matches) {
+                    setSidebarState(false);
+                }
+            };
+
+            if (mobileQuery.addEventListener) {
+                mobileQuery.addEventListener('change', onViewportChange);
+            } else if (mobileQuery.addListener) {
+                mobileQuery.addListener(onViewportChange);
+            }
+
             document.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', (e) => {
                     if (link.href && !link.target && link.hostname === window.location.hostname) {
