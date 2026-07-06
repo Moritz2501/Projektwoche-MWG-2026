@@ -19,6 +19,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
 
 if (!process.env.ENCRYPTION_KEY && !process.env.DATABASE_URL && !process.env.NEON_DATABASE_URL) {
   process.env.ENCRYPTION_KEY = '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff';
@@ -336,7 +337,7 @@ async function startServer() {
   }
 }
 
-if (process.env.NODE_ENV !== 'test') {
+if (isDirectRun && process.env.NODE_ENV !== 'test') {
   startServer();
 }
 
