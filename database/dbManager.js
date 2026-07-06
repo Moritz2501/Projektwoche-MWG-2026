@@ -104,6 +104,16 @@ class DatabaseManager {
     this.encryptionKey = encryptionKey;
   }
 
+  assertLocalStorageKey() {
+    if (!this.encryptionKey || typeof this.encryptionKey !== 'string') {
+      throw new Error('Missing ENCRYPTION_KEY. Set ENCRYPTION_KEY in the environment.');
+    }
+    const keyBuffer = Buffer.from(this.encryptionKey, 'hex');
+    if (keyBuffer.length !== 32) {
+      throw new Error('ENCRYPTION_KEY must be a 32-byte hex string.');
+    }
+  }
+
   async query(text, params = []) {
     if (!this.pool) {
       throw new Error('No database connection configured');
@@ -213,7 +223,17 @@ class DatabaseManager {
   async initializeDefaults() {
     try {
       if (this.useNeon) {
-        await this.createTables();
+        try {
+          await this.createTables();
+        } catch (dbError) {
+          console.error('PostgreSQL initialization failed, falling back to local encrypted JSON storage:', {
+            message: dbError?.message,
+            hasDatabaseUrl: Boolean(process.env.DATABASE_URL || process.env.NEON_DATABASE_URL)
+          });
+          this.assertLocalStorageKey();
+          this.useNeon = false;
+          this.pool = null;
+        }
       }
 
       if (!readJsonFileSync.call(this, 'users')) {
