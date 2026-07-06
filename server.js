@@ -173,10 +173,30 @@ app.get('/projekte/neu', async (req, res) => {
     return res.redirect('/login');
   }
 
-  const { requirePermission } = await import('./middleware/rbac.js');
-  const canCreate = requirePermission('projects:create');
-  
+  const { hasPermission } = await import('./middleware/rbac.js');
+  if (!hasPermission(req.session.user.role, 'projects:create')) {
+    return res.status(403).render('error', { message: 'Keine Berechtigung' });
+  }
+
   res.render('projects/form', { project: null });
+});
+
+app.get('/projekte/:projectId/edit', async (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.redirect('/login');
+  }
+
+  const { hasPermission } = await import('./middleware/rbac.js');
+  if (!hasPermission(req.session.user.role, 'projects:edit')) {
+    return res.status(403).render('error', { message: 'Keine Berechtigung' });
+  }
+
+  const project = await db.getProjectById(req.params.projectId);
+  if (!project) {
+    return res.status(404).render('error', { message: 'Projekt nicht gefunden' });
+  }
+
+  res.render('projects/form', { project });
 });
 
 app.get('/projekte/batch', async (req, res) => {
@@ -209,7 +229,7 @@ app.post('/api/projects', async (req, res) => {
       return res.status(400).json({ error: 'Name und Beschreibung erforderlich' });
     }
 
-    const project = db.createProject({
+    const project = await db.createProject({
       name,
       description,
       supervisors: supervisors ? supervisors.split(',').map(s => s.trim()) : [],
@@ -217,7 +237,7 @@ app.post('/api/projects', async (req, res) => {
       presentationType: presentationType || 'booth'
     });
 
-    db.addLog({
+    await db.addLog({
       action: 'project_created',
       userId: req.session.user.id,
       details: `Created project: ${name}`
@@ -226,6 +246,44 @@ app.post('/api/projects', async (req, res) => {
     res.json(project);
   } catch (error) {
     console.error('Project creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/projects/:projectId', async (req, res) => {
+  try {
+    if (!req.session || !req.session.user) {
+      return res.status(401).json({ error: 'Nicht authentifiziert' });
+    }
+
+    const { hasPermission } = await import('./middleware/rbac.js');
+    if (!hasPermission(req.session.user.role, 'projects:edit')) {
+      return res.status(403).json({ error: 'Keine Berechtigung' });
+    }
+
+    const { name, description, supervisors, memberCount, presentationType } = req.body;
+
+    if (!name || !description) {
+      return res.status(400).json({ error: 'Name und Beschreibung erforderlich' });
+    }
+
+    const updatedProject = await db.updateProject(req.params.projectId, {
+      name,
+      description,
+      supervisors: supervisors ? supervisors.split(',').map(s => s.trim()) : [],
+      memberCount: parseInt(memberCount) || 0,
+      presentationType: presentationType || 'booth'
+    });
+
+    await db.addLog({
+      action: 'project_updated',
+      userId: req.session.user.id,
+      details: `Updated project: ${updatedProject.name}`
+    });
+
+    res.json(updatedProject);
+  } catch (error) {
+    console.error('Project update error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -353,6 +411,54 @@ app.put('/api/schedule/reorder', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Schedule reorder error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/schedule/slots/:slotId', async (req, res) => {
+  try {
+    if (!req.session || !req.session.user) {
+      return res.status(401).json({ error: 'Nicht authentifiziert' });
+    }
+
+    const { time, duration, projectId, order } = req.body;
+    const updatedSlot = await db.updateScheduleSlot(req.params.slotId, {
+      time: time || null,
+      duration: duration !== undefined ? parseInt(duration) || null : undefined,
+      projectId: projectId || null,
+      order
+    });
+
+    await db.addLog({
+      action: 'schedule_slot_updated',
+      userId: req.session.user.id,
+      details: `Updated schedule slot ${req.params.slotId}`
+    });
+
+    res.json(updatedSlot);
+  } catch (error) {
+    console.error('Schedule update error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/schedule/slots/:slotId', async (req, res) => {
+  try {
+    if (!req.session || !req.session.user) {
+      return res.status(401).json({ error: 'Nicht authentifiziert' });
+    }
+
+    await db.deleteScheduleSlot(req.params.slotId);
+
+    await db.addLog({
+      action: 'schedule_slot_deleted',
+      userId: req.session.user.id,
+      details: `Deleted schedule slot ${req.params.slotId}`
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Schedule delete error:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -78,6 +78,7 @@
     <div class="max-w-2xl">
         <div class="glass-panel p-8">
             <form onsubmit="submitForm(event)">
+                <input type="hidden" id="projectId" value="<%= project ? project.id : '' %>">
                 <div class="space-y-6">
                     <!-- Project Name -->
                     <div>
@@ -178,6 +179,7 @@
     async function submitForm(event) {
         event.preventDefault();
 
+        const projectId = document.getElementById('projectId').value;
         const formData = {
             name: document.getElementById('name').value,
             description: document.getElementById('description').value,
@@ -186,19 +188,22 @@
             presentationType: document.getElementById('presentationType').value
         };
 
+        const url = projectId ? `/api/projects/${projectId}` : '/api/projects';
+        const method = projectId ? 'PUT' : 'POST';
+
         try {
-            const response = await fetch('/api/projects', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
 
             if (response.ok) {
-                alert('Projekt erfolgreich erstellt!');
+                alert(projectId ? 'Projekt erfolgreich aktualisiert!' : 'Projekt erfolgreich erstellt!');
                 window.location.href = '/projekte';
             } else {
                 const error = await response.json();
-                alert('Fehler: ' + error.error);
+                alert('Fehler: ' + (error.error || 'Ein Fehler ist aufgetreten'));
             }
         } catch (error) {
             console.error('Error:', error);

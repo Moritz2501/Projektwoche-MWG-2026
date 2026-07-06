@@ -130,8 +130,8 @@
                     const project = projects.find(p => p.id === slot.projectId);
                 %>
                     <div class="slot-card" draggable="true" data-slot-id="<%= slot.id %>" data-order="<%= slot.order %>">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
+                        <div class="flex justify-between items-start gap-4 flex-wrap">
+                            <div class="flex-1 min-w-[220px]">
                                 <div class="time-badge">
                                     ⏰ <%= slot.duration ? `${slot.duration} min` : 'ohne Dauer' %>
                                 </div>
@@ -140,8 +140,40 @@
                                 <% } else { %>
                                     <p class="text-gray-400 italic mt-2">Kein Projekt zugeordnet</p>
                                 <% } %>
+                                <% if (slot.time) { %>
+                                    <p class="text-gray-300 text-sm mt-2">Zeit: <%= slot.time %></p>
+                                <% } %>
                             </div>
                             <span class="text-gray-500 text-xs">📌 Ziehe zum Sortieren</span>
+                        </div>
+
+                        <div class="mt-4 grid gap-4 md:grid-cols-3">
+                            <div>
+                                <label for="time-<%= slot.id %>" class="block text-sm text-gray-300 mb-2">Zeit</label>
+                                <input id="time-<%= slot.id %>" type="time" class="input-field w-full" value="<%= slot.time || '' %>">
+                            </div>
+                            <div>
+                                <label for="duration-<%= slot.id %>" class="block text-sm text-gray-300 mb-2">Dauer (Minuten)</label>
+                                <input id="duration-<%= slot.id %>" type="number" min="1" class="input-field w-full" value="<%= slot.duration || '' %>">
+                            </div>
+                            <div>
+                                <label for="project-<%= slot.id %>" class="block text-sm text-gray-300 mb-2">Projekt</label>
+                                <select id="project-<%= slot.id %>" class="input-field w-full">
+                                    <option value="" <%= !slot.projectId ? 'selected' : '' %>>Kein Projekt</option>
+                                    <% projects.forEach(p => { %>
+                                        <option value="<%= p.id %>" <%= p.id === slot.projectId ? 'selected' : '' %>><%= p.name %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <button type="button" onclick="updateSlot('<%= slot.id %>')" class="btn-primary">
+                                💾 Speichern
+                            </button>
+                            <button type="button" onclick="deleteSlot('<%= slot.id %>')" class="glass-panel px-4 py-2 text-gray-300 hover:text-white">
+                                🗑️ Entfernen
+                            </button>
                         </div>
                     </div>
                 <% }); %>
@@ -197,6 +229,54 @@
                 location.reload();
             } else {
                 alert('Fehler beim Erstellen des Slots');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten');
+        }
+    }
+
+    async function updateSlot(slotId) {
+        const time = document.getElementById(`time-${slotId}`).value;
+        const duration = document.getElementById(`duration-${slotId}`).value;
+        const projectId = document.getElementById(`project-${slotId}`).value;
+
+        try {
+            const response = await fetch(`/api/schedule/slots/${slotId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    time: time || null,
+                    duration: duration ? parseInt(duration) : null,
+                    projectId: projectId || null
+                })
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Fehler beim Aktualisieren des Slots');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten');
+        }
+    }
+
+    async function deleteSlot(slotId) {
+        if (!confirm('Soll dieser Zeitplan-Slot wirklich gelöscht werden?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/schedule/slots/${slotId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Fehler beim Entfernen des Slots');
             }
         } catch (error) {
             console.error('Error:', error);

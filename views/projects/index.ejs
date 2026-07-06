@@ -78,10 +78,12 @@
         </div>
         <div class="page-actions">
             <a href="/dashboard" class="back-home-link">🏠 Dashboard</a>
-            <% if (user && user.role === 'admin') { %>
-                <a href="/projekte/batch" class="btn-primary" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border-color: rgba(124, 58, 237, 0.5);">
-                    📚 Mehrere Projekte
-                </a>
+            <% if (user) { %>
+                <% if (user.role === 'admin') { %>
+                    <a href="/projekte/batch" class="btn-primary" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border-color: rgba(124, 58, 237, 0.5);">
+                        📚 Mehrere Projekte
+                    </a>
+                <% } %>
                 <a href="/projekte/neu" class="btn-primary">
                     ➕ Neues Projekt
                 </a>
@@ -99,7 +101,7 @@
                         <th class="px-4 py-3 font-semibold">Betreuer</th>
                         <th class="px-4 py-3 font-semibold">Teilnehmer</th>
                         <th class="px-4 py-3 font-semibold">Präsentation</th>
-                        <% if (user && user.role === 'admin') { %>
+                        <% if (user) { %>
                             <th class="px-4 py-3 font-semibold">Aktionen</th>
                         <% } %>
                     </tr>
@@ -126,11 +128,11 @@
                                     <span class="badge-stage">🎭 Bühne</span>
                                 <% } %>
                             </td>
-                            <% if (user && user.role === 'admin') { %>
+                            <% if (user) { %>
                                 <td class="px-4 py-3">
-                                    <button class="text-purple-400 hover:text-purple-300 text-sm">
+                                    <a href="/projekte/<%= project.id %>/edit" class="text-purple-400 hover:text-purple-300 text-sm">
                                         ✏️ Bearbeiten
-                                    </button>
+                                    </a>
                                 </td>
                             <% } %>
                         </tr>
@@ -143,7 +145,7 @@
             <p class="text-gray-400 text-lg mb-4">
                 📭 Noch keine Projekte vorhanden
             </p>
-            <% if (user && user.role === 'admin') { %>
+            <% if (user) { %>
                 <a href="/projekte/neu" class="btn-primary">
                     ➕ Erstes Projekt erstellen
                 </a>
