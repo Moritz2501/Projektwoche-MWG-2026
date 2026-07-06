@@ -66,6 +66,14 @@ async function initializeAdmin() {
 // ==================== ROUTES ====================
 
 // Public routes
+app.get('/favicon.ico', (req, res) => {
+  res.redirect(302, '/favicon.svg');
+});
+
+app.get('/favicon.png', (req, res) => {
+  res.redirect(302, '/favicon.svg');
+});
+
 app.get('/', async (req, res) => {
   const slots = (await db.getAllScheduleSlots()).sort((a, b) => a.order - b.order);
   const projects = await db.getAllProjects();
@@ -75,7 +83,7 @@ app.get('/', async (req, res) => {
 // Auth routes
 app.get('/login', (req, res) => {
   if (req.session && req.session.user) {
-    return res.redirect('/dashboard');
+    return res.redirect(303, '/dashboard');
   }
   res.render('login', { error: null });
 });
@@ -125,7 +133,7 @@ app.post('/login', async (req, res) => {
       details: `User logged in`
     });
 
-    res.redirect('/dashboard');
+    return res.redirect(303, '/dashboard');
   } catch (error) {
     console.error('Login error:', error);
     res.render('login', { error: 'Ein Fehler ist aufgetreten' });
@@ -145,17 +153,26 @@ app.get('/logout', (req, res) => {
 
   req.session.destroy(() => {
     res.clearCookie('connect.sid');
-    res.redirect('/');
+    res.redirect(303, '/');
   });
 });
 
 // Dashboard
 app.get('/dashboard', (req, res) => {
   if (!req.session || !req.session.user) {
-    return res.redirect('/login');
+    return res.redirect(303, '/login');
   }
 
   res.render('dashboard', { user: req.session.user });
+});
+
+// Defensive fallback: if a client posts to /dashboard after login redirect,
+// force a safe GET navigation target instead of returning 404.
+app.post('/dashboard', (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.redirect(303, '/login');
+  }
+  return res.redirect(303, '/dashboard');
 });
 
 // Projects routes
