@@ -169,8 +169,6 @@ class DatabaseManager {
   }
 
   async ensureDefaultUsers() {
-    const adminUsername = process.env.ADMIN_USER || 'admin';
-    const userUsername = process.env.USER_USER || 'user';
     const adminPassword = process.env.ADMIN_PASS || 'Admin123!';
     const userPassword = process.env.USER_PASS || 'User123!';
     const adminPasswordHash = process.env.ADMIN_PASS_HASH;
@@ -185,14 +183,14 @@ class DatabaseManager {
 
     const desiredUsers = [
       {
-        username: adminUsername,
+        id: 'user-admin',
         email: 'admin@mwg.local',
         role: 'admin',
         password: adminPassword,
         passwordHash: await resolvePasswordHash(adminPassword, adminPasswordHash)
       },
       {
-        username: userUsername,
+        id: 'user-default',
         email: 'user@mwg.local',
         role: 'user',
         password: userPassword,
@@ -201,13 +199,13 @@ class DatabaseManager {
     ];
 
     if (this.useNeon) {
-      const existing = await this.query(`SELECT id, username FROM users`);
+      const existing = await this.query(`SELECT id, role FROM users`);
       const existingRows = existing.rows;
-      const usernames = desiredUsers.map(user => user.username.toLowerCase());
-      await this.query(`DELETE FROM users WHERE LOWER(username) NOT IN (${usernames.map((_, index) => `$${index + 1}`).join(',')})`, usernames);
+      const roles = desiredUsers.map(user => user.role.toLowerCase());
+      await this.query(`DELETE FROM users WHERE COALESCE(LOWER(role), '') NOT IN (${roles.map((_, index) => `$${index + 1}`).join(',')})`, roles);
 
       for (const desired of desiredUsers) {
-        const existingUser = existingRows.find(row => row.username?.toLowerCase() === desired.username.toLowerCase());
+        const existingUser = existingRows.find(row => row.role?.toLowerCase() === desired.role.toLowerCase());
         const passwordHash = desired.passwordHash;
 
         if (existingUser) {
@@ -217,11 +215,10 @@ class DatabaseManager {
             WHERE id = $4
           `, [desired.email, desired.role, passwordHash, existingUser.id]);
         } else {
-          const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
           await this.query(`
-            INSERT INTO users (id, username, email, role, password_hash, created_at, updated_at, must_change_password)
-            VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), FALSE)
-          `, [id, desired.username, desired.email, desired.role, passwordHash]);
+            INSERT INTO users (id, email, role, password_hash, created_at, updated_at, must_change_password)
+            VALUES ($1, $2, $3, $4, NOW(), NOW(), FALSE)
+          `, [desired.id, desired.email, desired.role, passwordHash]);
         }
       }
 
@@ -237,22 +234,22 @@ class DatabaseManager {
     const keptUsers = [];
 
     for (const desired of desiredUsers) {
-      const existingUser = usersData.users.find(user => user.username.toLowerCase() === desired.username.toLowerCase());
+      const existingUser = usersData.users.find(user => user.role?.toLowerCase() === desired.role.toLowerCase());
       const passwordHash = desired.passwordHash;
 
       if (existingUser) {
         keptUsers.push({
-          ...existingUser,
+          id: existingUser.id || desired.id,
           email: desired.email,
           role: desired.role,
           passwordHash,
+          createdAt: existingUser.createdAt || new Date().toISOString(),
           mustChangePassword: false,
           updatedAt: new Date().toISOString()
         });
       } else {
         keptUsers.push({
-          id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          username: desired.username,
+          id: desired.id,
           email: desired.email,
           role: desired.role,
           passwordHash,
@@ -324,7 +321,6 @@ class DatabaseManager {
     await this.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
-        username TEXT UNIQUE NOT NULL,
         password_hash TEXT,
         email TEXT,
         role TEXT,
@@ -333,6 +329,13 @@ class DatabaseManager {
         must_change_password BOOLEAN DEFAULT FALSE
       )
     `);
+
+    // Backward compatibility for older schemas that still enforce username.
+    try {
+      await this.query(`ALTER TABLE users ALTER COLUMN username DROP NOT NULL`);
+    } catch (err) {
+      // Column may not exist on new schemas; ignore.
+    }
 
     await this.query(`
       CREATE TABLE IF NOT EXISTS projects (
@@ -387,10 +390,9 @@ class DatabaseManager {
 
   async getAllUsers() {
     if (this.useNeon) {
-      const result = await this.query(`SELECT id, username, email, role, created_at, updated_at, must_change_password FROM users`);
+      const result = await this.query(`SELECT id, email, role, created_at, updated_at, must_change_password FROM users`);
       return result.rows.map(row => ({
         id: row.id,
-        username: row.username,
         email: row.email,
         role: row.role,
         createdAt: row.created_at,
@@ -401,17 +403,23 @@ class DatabaseManager {
 
     const data = this.readFile('users');
     if (!data) return [];
-    return data.users.map(u => ({ ...u, passwordHash: undefined }));
+    return data.users.map(user => ({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      mustChangePassword: user.mustChangePassword
+    }));
   }
 
-  async getUserByUsername(username) {
+  async getUserByRole(role) {
     if (this.useNeon) {
-      const result = await this.query(`SELECT * FROM users WHERE LOWER(username) = LOWER($1)`, [username]);
+      const result = await this.query(`SELECT * FROM users WHERE LOWER(role) = LOWER($1)`, [role]);
       const row = result.rows[0];
       if (!row) return null;
       return {
         id: row.id,
-        username: row.username,
         email: row.email,
         role: row.role,
         passwordHash: row.password_hash,
@@ -423,17 +431,16 @@ class DatabaseManager {
 
     const data = this.readFile('users');
     if (!data) return null;
-    return data.users.find(u => u.username.toLowerCase() === username.toLowerCase()) || null;
+    return data.users.find(u => u.role?.toLowerCase() === role.toLowerCase()) || null;
   }
 
   async getUserById(id) {
     if (this.useNeon) {
-      const result = await this.query(`SELECT id, username, email, role, created_at, updated_at, must_change_password FROM users WHERE id = $1`, [id]);
+      const result = await this.query(`SELECT id, email, role, created_at, updated_at, must_change_password FROM users WHERE id = $1`, [id]);
       const row = result.rows[0];
       if (!row) return null;
       return {
         id: row.id,
-        username: row.username,
         email: row.email,
         role: row.role,
         createdAt: row.created_at,
@@ -452,22 +459,21 @@ class DatabaseManager {
 
   async createUser(userData) {
     if (this.useNeon) {
-      const existing = await this.getUserByUsername(userData.username);
+      const existing = await this.getUserByRole(userData.role || 'user');
       if (existing) {
-        throw new Error('Benutzer existiert bereits');
+        throw new Error('Rolle existiert bereits');
       }
 
       const passwordHash = await hashPassword(userData.tempPassword);
       const id = `user-${Date.now()}`;
       const now = new Date().toISOString();
       await this.query(`
-        INSERT INTO users (id, username, email, role, password_hash, created_at, updated_at, must_change_password)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      `, [id, userData.username, userData.email, userData.role || 'user', passwordHash, now, now, true]);
+        INSERT INTO users (id, email, role, password_hash, created_at, updated_at, must_change_password)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [id, userData.email, userData.role || 'user', passwordHash, now, now, true]);
 
       return {
         id,
-        username: userData.username,
         email: userData.email,
         role: userData.role || 'user',
         createdAt: now,
@@ -477,14 +483,13 @@ class DatabaseManager {
     }
 
     const data = this.readFile('users');
-    if (data.users.some(u => u.username.toLowerCase() === userData.username.toLowerCase())) {
-      throw new Error('Benutzer existiert bereits');
+    if (data.users.some(u => (u.role || '').toLowerCase() === (userData.role || 'user').toLowerCase())) {
+      throw new Error('Rolle existiert bereits');
     }
 
     const passwordHash = await hashPassword(userData.tempPassword);
     const newUser = {
       id: `user-${Date.now()}`,
-      username: userData.username,
       email: userData.email,
       role: userData.role || 'user',
       passwordHash,
@@ -528,7 +533,6 @@ class DatabaseManager {
 
       return {
         id: user.id,
-        username: user.username,
         email: updates.email,
         role: updates.role,
         createdAt: user.created_at,

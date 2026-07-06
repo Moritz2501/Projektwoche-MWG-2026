@@ -191,8 +191,8 @@
 
             <div class="border-t border-white/10 pt-4">
                 <div class="glass-panel user-info-card p-4 mb-4">
-                    <p class="text-xs text-gray-400">Benutzer</p>
-                    <p class="text-sm font-semibold text-white mt-1"><%= user.username %></p>
+                    <p class="text-xs text-gray-400">Anmeldung</p>
+                    <p class="text-sm font-semibold text-white mt-1 capitalize"><%= user.role %></p>
                     <p class="text-xs text-purple-400 mt-1 capitalize"><%= user.role %></p>
                 </div>
                 <a href="/logout" class="btn-secondary">
@@ -214,7 +214,7 @@
                 <div>
                     <div class="mb-8">
                         <h1 class="dashboard-heading text-4xl font-bold text-white mb-2">
-                            Willkommen zurück, <%= user.username %>!
+                            Willkommen zurück!
                         </h1>
                         <p class="text-gray-400">
                             Übersicht und schneller Zugriff auf alle Funktionen
@@ -275,14 +275,10 @@
                     <!-- System Info -->
                     <div class="glass-panel hero-panel p-6 mt-8">
                         <h3 class="text-lg font-semibold text-white mb-3">Systeminformationen</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                             <div>
                                 <p class="text-xs text-gray-400">Deine Rolle</p>
                                 <p class="text-sm font-semibold text-purple-300 capitalize"><%= user.role %></p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-400">Benutzername</p>
-                                <p class="text-sm font-semibold text-gray-200"><%= user.username %></p>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-400">System</p>

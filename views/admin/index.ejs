@@ -119,7 +119,7 @@
             <div class="glass-panel p-6">
                 <h3 class="text-lg font-semibold text-white mb-4">Feste Konten</h3>
                 <p class="text-gray-400 mb-4">
-                    Es stehen nur die beiden festen Konten <span class="text-purple-300 font-semibold">admin</span> und <span class="text-purple-300 font-semibold">user</span> zur Verfügung.
+                    Es stehen nur die beiden festen Rollen <span class="text-purple-300 font-semibold">admin</span> und <span class="text-purple-300 font-semibold">user</span> zur Verfügung.
                     Die Passwörter werden über die Umgebungsvariablen <span class="text-gray-200 font-mono">ADMIN_PASS</span> und <span class="text-gray-200 font-mono">USER_PASS</span> gesetzt.
                 </p>
             </div>
@@ -132,7 +132,6 @@
                 <table class="table-glass w-full">
                     <thead>
                         <tr class="text-left">
-                            <th class="px-4 py-3 font-semibold">Benutzername</th>
                             <th class="px-4 py-3 font-semibold">Email</th>
                             <th class="px-4 py-3 font-semibold">Rolle</th>
                             <th class="px-4 py-3 font-semibold">Erstellt am</th>
@@ -142,7 +141,6 @@
                     <tbody>
                         <% users.forEach(user => { %>
                             <tr>
-                                <td class="px-4 py-3 font-medium text-white"><%= user.username %></td>
                                 <td class="px-4 py-3 text-gray-300"><%= user.email %></td>
                                 <td class="px-4 py-3 capitalize text-purple-300"><%= user.role %></td>
                                 <td class="px-4 py-3 text-gray-300 text-sm">

@@ -40,8 +40,8 @@ NODE_ENV=development
 PORT=3000
 
 # Admin Credentials (ÄNDERN!)
-ADMIN_USER=admin
 ADMIN_PASS=ChangeMe123!
+USER_PASS=ChangeMe123!
 
 # Encryption Keys (Generiere mit: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 ENCRYPTION_KEY=<32-byte-hex-schlüssel>
@@ -87,15 +87,15 @@ Dann wird in `/tmp` gespeichert, aber Daten gehen bei Redeploy/Cold Start verlor
 - `NEON_DATABASE_URL` oder `DATABASE_URL`
 - `SESSION_SECRET`
 - `ENCRYPTION_KEY`
-- `ADMIN_USER`, `ADMIN_PASS_HASH`
-- `USER_USER`, `USER_PASS_HASH`
+- `ADMIN_PASS_HASH`
+- `USER_PASS_HASH`
 
 Sobald `NEON_DATABASE_URL` oder `DATABASE_URL` gesetzt ist, nutzt die App automatisch PostgreSQL und die Daten bleiben über Deployments hinweg erhalten.
 
 ## 🔐 Sicherheit
 
-### Admin-Benutzer
-Der Admin-Benutzer wird automatisch beim ersten Start erstellt basierend auf den Umgebungsvariablen `ADMIN_USER` und `ADMIN_PASS`.
+### Rollenbasierter Login
+Beim Start werden feste Konten für die Rollen `admin` und `user` bereitgestellt. Die Passwörter werden über `ADMIN_PASS` und `USER_PASS` gesetzt.
 
 ### Passwort-Anforderungen
 - Mindestens 8 Zeichen
@@ -279,8 +279,8 @@ Das Projekt nutzt Tailwind CSS mit eigenen CSS-Variablen und Klassen. Siehe `vie
 
 2. Setze in den Vercel Project Settings die folgenden Umgebungsvariablen (Environment Variables):
 
-- `ADMIN_USER` — Admin-Benutzername
 - `ADMIN_PASS` — Admin-Passwort
+- `USER_PASS` — User-Passwort
 - `ENCRYPTION_KEY` — 32-Byte Hex-String
 - `ENCRYPTION_IV` — 16-Byte Hex-String
 - `SESSION_SECRET` — Sichere Zufallszeichenkette

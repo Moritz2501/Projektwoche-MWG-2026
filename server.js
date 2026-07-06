@@ -90,19 +90,19 @@ app.get('/login', (req, res) => {
 
 app.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { role, password } = req.body;
     
-    if (!username || !password) {
-      return res.render('login', { error: 'Benutzername und Passwort erforderlich' });
+    if (!role || !password) {
+      return res.render('login', { error: 'Rolle und Passwort erforderlich' });
     }
 
-    const user = await db.getUserByUsername(username);
+    const user = await db.getUserByRole(role);
     
     if (!user) {
       db.addLog({
         action: 'login_failed',
         userId: 'unknown',
-        details: `Failed login attempt for username: ${username}`
+        details: `Failed login attempt for role: ${role}`
       });
       return res.render('login', { error: 'Ungültige Anmeldedaten' });
     }
@@ -122,7 +122,6 @@ app.post('/login', async (req, res) => {
     // Create session
     req.session.user = {
       id: user.id,
-      username: user.username,
       role: user.role,
       email: user.email
     };

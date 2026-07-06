@@ -87,8 +87,8 @@ Siehe [README_DE.md](./README_DE.md) für vollständige deutsche Dokumentation m
 ```env
 NODE_ENV=development
 PORT=3000
-ADMIN_USER=admin
 ADMIN_PASS=ChangeMe123!
+USER_PASS=ChangeMe123!
 ENCRYPTION_KEY=<32-byte-hex>
 ENCRYPTION_IV=<16-byte-hex>
 SESSION_SECRET=<random-secret>
