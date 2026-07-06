@@ -240,7 +240,7 @@ app.post('/api/projects', async (req, res) => {
       return res.status(403).json({ error: 'Keine Berechtigung' });
     }
 
-    const { name, description, supervisors, memberCount, presentationType } = req.body;
+    const { name, description, supervisors, presentationType } = req.body;
 
     if (!name || !description) {
       return res.status(400).json({ error: 'Name und Beschreibung erforderlich' });
@@ -250,7 +250,6 @@ app.post('/api/projects', async (req, res) => {
       name,
       description,
       supervisors: supervisors ? supervisors.split(',').map(s => s.trim()) : [],
-      memberCount: parseInt(memberCount) || 0,
       presentationType: presentationType || 'booth'
     });
 
@@ -278,7 +277,7 @@ app.put('/api/projects/:projectId', async (req, res) => {
       return res.status(403).json({ error: 'Keine Berechtigung' });
     }
 
-    const { name, description, supervisors, memberCount, presentationType } = req.body;
+    const { name, description, supervisors, presentationType } = req.body;
 
     if (!name || !description) {
       return res.status(400).json({ error: 'Name und Beschreibung erforderlich' });
@@ -288,7 +287,6 @@ app.put('/api/projects/:projectId', async (req, res) => {
       name,
       description,
       supervisors: supervisors ? supervisors.split(',').map(s => s.trim()) : [],
-      memberCount: parseInt(memberCount) || 0,
       presentationType: presentationType || 'booth'
     });
 
@@ -359,7 +357,7 @@ app.post('/api/projects/batch', async (req, res) => {
 
     for (const projectData of projects) {
       try {
-        const { name, description, supervisors, memberCount, presentationType } = projectData;
+        const { name, description, supervisors, presentationType } = projectData;
 
         if (!name || !description) {
           errors.push(`Projekt "${name || 'unnamed'}": Name und Beschreibung erforderlich`);
@@ -370,7 +368,6 @@ app.post('/api/projects/batch', async (req, res) => {
           name,
           description,
           supervisors: supervisors ? (typeof supervisors === 'string' ? supervisors.split(',').map(s => s.trim()) : supervisors) : [],
-          memberCount: parseInt(memberCount) || 0,
           presentationType: presentationType || 'booth'
         });
 

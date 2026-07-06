@@ -200,8 +200,8 @@
                 
                 <div class="import-format-hint">
                     <strong>Format:</strong><br>
-                    name | description | supervisors | memberCount | presentationType<br>
-                    <span style="opacity: 0.7;">Beispiel: Robotik | Ein Projekt über Robotik | Herr Müller, Frau Schmidt | 5 | booth</span><br>
+                    name | description | supervisors | presentationType<br>
+                    <span style="opacity: 0.7;">Beispiel: Robotik | Ein Projekt über Robotik | Herr Müller, Frau Schmidt | booth</span><br>
                     <strong>Hinweis:</strong> presentationType: "booth" oder "stage-time-slot"
                 </div>
 
@@ -266,7 +266,6 @@
                 <input type="text" placeholder="Projektname *" class="project-name" required>
                 <input type="text" placeholder="Beschreibung *" class="project-description" required>
                 <input type="text" placeholder="Betreuer (durch Komma getrennt)" class="project-supervisors">
-                <input type="number" placeholder="Anzahl Teilnehmer" class="project-memberCount" value="1" min="1">
                 
                 <select class="project-presentationType">
                     <option value="booth">Stand</option>
@@ -302,7 +301,6 @@
                 name,
                 description,
                 supervisors: item.querySelector('.project-supervisors').value.trim(),
-                memberCount: parseInt(item.querySelector('.project-memberCount').value) || 1,
                 presentationType: item.querySelector('.project-presentationType').value
             });
         });
@@ -345,14 +343,13 @@
         
         lines.forEach((line, idx) => {
             const parts = line.split('|').map(p => p.trim());
-            if (parts.length >= 5) {
+            if (parts.length >= 4) {
                 projects.push({
                     index: idx + 1,
                     name: parts[0],
                     description: parts[1],
                     supervisors: parts[2],
-                    memberCount: parts[3],
-                    presentationType: parts[4]
+                    presentationType: parts[3]
                 });
             }
         });
@@ -364,7 +361,7 @@
                     <p class="text-white font-semibold">${p.name}</p>
                     <p class="text-gray-300 text-sm">${p.description}</p>
                     <div class="text-xs text-gray-400 mt-2">
-                        ${p.memberCount} Teilnehmer | ${p.supervisors || '-'} | ${p.presentationType === 'booth' ? 'Stand' : 'Bühne'}
+                        ${p.supervisors || '-'} | ${p.presentationType === 'booth' ? 'Stand' : 'Bühne'}
                     </div>
                 </div>
             `;
@@ -387,13 +384,12 @@
         
         lines.forEach((line, idx) => {
             const parts = line.split('|').map(p => p.trim());
-            if (parts.length >= 5) {
+            if (parts.length >= 4) {
                 projects.push({
                     name: parts[0],
                     description: parts[1],
                     supervisors: parts[2],
-                    memberCount: parseInt(parts[3]) || 1,
-                    presentationType: parts[4]
+                    presentationType: parts[3]
                 });
             }
         });

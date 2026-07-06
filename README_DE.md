@@ -127,7 +127,7 @@ Neue Benutzer erhalten automatisch generierte temporäre Passwörter im Format: 
 
 #### 📋 Projekte
 - Tabellen-Ansicht aller Projekte
-- Spalten: Name, Beschreibung, Betreuer, Teilnehmer, Präsentationsart
+- Spalten: Name, Beschreibung, Betreuer, Präsentationsart
 - **RBAC**: Nur Admin/Projekt Verwaltung können erstellen/bearbeiten
 
 #### ⏰ Zeitplan

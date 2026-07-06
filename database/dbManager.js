@@ -340,7 +340,6 @@ class DatabaseManager {
         name TEXT NOT NULL,
         description TEXT,
         supervisors JSONB,
-        member_count INTEGER DEFAULT 0,
         presentation_type TEXT,
         created_at TIMESTAMPTZ NOT NULL,
         updated_at TIMESTAMPTZ NOT NULL
@@ -579,7 +578,6 @@ class DatabaseManager {
         name: row.name,
         description: row.description,
         supervisors: row.supervisors || [],
-        memberCount: row.member_count,
         presentationType: row.presentation_type,
         createdAt: row.created_at,
         updatedAt: row.updated_at
@@ -599,7 +597,6 @@ class DatabaseManager {
         name: row.name,
         description: row.description,
         supervisors: row.supervisors || [],
-        memberCount: row.member_count,
         presentationType: row.presentation_type,
         createdAt: row.created_at,
         updatedAt: row.updated_at
@@ -614,15 +611,14 @@ class DatabaseManager {
       const id = `proj-${Date.now()}`;
       const now = new Date().toISOString();
       await this.query(`
-        INSERT INTO projects (id, name, description, supervisors, member_count, presentation_type, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      `, [id, projectData.name, projectData.description, JSON.stringify(projectData.supervisors || []), projectData.memberCount || 0, projectData.presentationType || 'booth', now, now]);
+        INSERT INTO projects (id, name, description, supervisors, presentation_type, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [id, projectData.name, projectData.description, JSON.stringify(projectData.supervisors || []), projectData.presentationType || 'booth', now, now]);
       return {
         id,
         name: projectData.name,
         description: projectData.description,
         supervisors: projectData.supervisors || [],
-        memberCount: projectData.memberCount || 0,
         presentationType: projectData.presentationType || 'booth',
         createdAt: now,
         updatedAt: now
@@ -635,7 +631,6 @@ class DatabaseManager {
       name: projectData.name,
       description: projectData.description,
       supervisors: projectData.supervisors || [],
-      memberCount: projectData.memberCount || 0,
       presentationType: projectData.presentationType || 'booth',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -656,20 +651,18 @@ class DatabaseManager {
         name: updateData.name ?? project.name,
         description: updateData.description ?? project.description,
         supervisors: updateData.supervisors ?? project.supervisors,
-        member_count: updateData.memberCount ?? project.member_count,
         presentation_type: updateData.presentationType ?? project.presentation_type,
         updated_at: new Date().toISOString()
       };
       await this.query(`
-        UPDATE projects SET name = $1, description = $2, supervisors = $3, member_count = $4, presentation_type = $5, updated_at = $6
-        WHERE id = $7
-      `, [updated.name, updated.description, JSON.stringify(updated.supervisors), updated.member_count, updated.presentation_type, updated.updated_at, projectId]);
+        UPDATE projects SET name = $1, description = $2, supervisors = $3, presentation_type = $4, updated_at = $5
+        WHERE id = $6
+      `, [updated.name, updated.description, JSON.stringify(updated.supervisors), updated.presentation_type, updated.updated_at, projectId]);
       return {
         id: project.id,
         name: updated.name,
         description: updated.description,
         supervisors: updated.supervisors,
-        memberCount: updated.member_count,
         presentationType: updated.presentation_type,
         createdAt: project.created_at,
         updatedAt: updated.updated_at
@@ -685,7 +678,6 @@ class DatabaseManager {
       name: updateData.name || project.name,
       description: updateData.description || project.description,
       supervisors: updateData.supervisors || project.supervisors,
-      memberCount: updateData.memberCount || project.memberCount,
       presentationType: updateData.presentationType || project.presentationType,
       updatedAt: new Date().toISOString()
     });

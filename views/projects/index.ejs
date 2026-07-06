@@ -99,7 +99,6 @@
                         <th class="px-4 py-3 font-semibold">Projektname</th>
                         <th class="px-4 py-3 font-semibold">Beschreibung</th>
                         <th class="px-4 py-3 font-semibold">Betreuer</th>
-                        <th class="px-4 py-3 font-semibold">Teilnehmer</th>
                         <th class="px-4 py-3 font-semibold">Präsentation</th>
                         <% if (user) { %>
                             <th class="px-4 py-3 font-semibold">Aktionen</th>
@@ -117,9 +116,6 @@
                                 <% } else { %>
                                     <span class="text-gray-500">-</span>
                                 <% } %>
-                            </td>
-                            <td class="px-4 py-3 text-gray-300">
-                                <%= project.memberCount %>
                             </td>
                             <td class="px-4 py-3">
                                 <% if (project.presentationType === 'booth') { %>
