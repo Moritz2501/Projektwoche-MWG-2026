@@ -75,7 +75,7 @@ Der Server läuft dann unter `http://localhost:3000`
 
 Wichtig: Ohne externe Datenbank sind Daten nach Redeploys auf Vercel nicht dauerhaft.
 
-- Lokal: JSON-Dateien funktionieren dauerhaft in `database/data/`.
+- Lokal: Verschluesselte Datendateien funktionieren dauerhaft in `database/data/`.
 - Vercel ohne DB-URL: Standardmaessig startet die App nicht mehr, um stillen Datenverlust zu verhindern.
 - Dauerhafte Lösung: PostgreSQL (z. B. Neon) anbinden.
 
@@ -198,13 +198,13 @@ Projektwoche-MWG-2026/
 
 ## 🗄️ Datenspeicherung
 
-### Verschlüsselte JSON-Dateien
-Alle Daten werden in `database/data/` als verschlüsselte JSON-Dateien gespeichert:
+### Verschluesselte Datendateien
+Alle Daten werden in `database/data/` als verschlüsselte Datendateien gespeichert:
 
-- `users.json`: Benutzer und Authentifizierung
-- `projects.json`: Projekt-Informationen
-- `schedule.json`: Zeitplan-Slots
-- `logs.json`: System-Logs
+- `users.enc`: Benutzer und Authentifizierung
+- `projects.enc`: Projekt-Informationen
+- `schedule.enc`: Zeitplan-Slots
+- `logs.enc`: System-Logs
 
 ### Daten-Format
 Jede Datei wird mit AES-256-GCM verschlüsselt und als Base64-String gespeichert.
@@ -239,10 +239,10 @@ Jede Datei wird mit AES-256-GCM verschlüsselt und als Base64-String gespeichert
 ## 🛠️ Troubleshooting
 
 ### Verschlüsselungsschlüssel verloren
-Wenn die Verschlüsselungsschlüssel verloren gehen, können die JSON-Dateien in `database/data/` nicht mehr entschlüsselt werden. Löschen Sie die Dateien, um die Anwendung zurückzusetzen:
+Wenn die Verschlüsselungsschlüssel verloren gehen, können die Datendateien in `database/data/` nicht mehr entschlüsselt werden. Löschen Sie die Dateien, um die Anwendung zurückzusetzen:
 
 ```bash
-rm -rf database/data/*.json
+rm -rf database/data/*.enc database/data/*.json
 ```
 
 ### Sessions funktionieren nicht

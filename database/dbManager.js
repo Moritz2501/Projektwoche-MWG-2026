@@ -9,6 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SOURCE_DATA_DIR = path.join(__dirname, 'data');
 const TEMP_DATA_DIR = path.join('/tmp', 'projektwoche-mwg-2026-data');
+const ENCRYPTED_DATA_EXTENSION = '.enc';
+const LEGACY_DATA_EXTENSION = '.json';
 const isVercelRuntime = process.env.VERCEL === '1';
 const allowEphemeralStorage = process.env.ALLOW_EPHEMERAL_STORAGE === '1';
 
@@ -72,7 +74,7 @@ function copySourceFiles(destDir) {
     return;
   }
 
-  const sourceFiles = fs.readdirSync(SOURCE_DATA_DIR).filter(file => file.endsWith('.json'));
+  const sourceFiles = fs.readdirSync(SOURCE_DATA_DIR).filter(file => file.endsWith(ENCRYPTED_DATA_EXTENSION) || file.endsWith(LEGACY_DATA_EXTENSION));
   for (const file of sourceFiles) {
     const srcPath = path.join(SOURCE_DATA_DIR, file);
     const destPath = path.join(destDir, file);
@@ -118,8 +120,30 @@ function chooseDataDir() {
 
 const DATA_DIR = chooseDataDir();
 
+function getEncryptedFilePath(filename) {
+  return path.join(DATA_DIR, `${filename}${ENCRYPTED_DATA_EXTENSION}`);
+}
+
+function getLegacyFilePath(filename) {
+  return path.join(DATA_DIR, `${filename}${LEGACY_DATA_EXTENSION}`);
+}
+
+function resolveExistingDataFilePath(filename) {
+  const encryptedPath = getEncryptedFilePath(filename);
+  if (fs.existsSync(encryptedPath)) {
+    return encryptedPath;
+  }
+
+  const legacyPath = getLegacyFilePath(filename);
+  if (fs.existsSync(legacyPath)) {
+    return legacyPath;
+  }
+
+  return encryptedPath;
+}
+
 function readJsonFileSync(filename) {
-  const filePath = path.join(DATA_DIR, `${filename}.json`);
+  const filePath = resolveExistingDataFilePath(filename);
   if (!fs.existsSync(filePath)) {
     return null;
   }
@@ -128,9 +152,14 @@ function readJsonFileSync(filename) {
 }
 
 function writeJsonFileSync(filename, data) {
-  const filePath = path.join(DATA_DIR, `${filename}.json`);
+  const filePath = getEncryptedFilePath(filename);
   const encrypted = encryptData(data, this.encryptionKey);
   fs.writeFileSync(filePath, encrypted, 'utf-8');
+
+  const legacyPath = getLegacyFilePath(filename);
+  if (legacyPath !== filePath && fs.existsSync(legacyPath)) {
+    fs.rmSync(legacyPath);
+  }
 }
 
 class DatabaseManager {
