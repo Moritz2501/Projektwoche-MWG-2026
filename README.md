@@ -110,5 +110,5 @@ MIT
 
 ---
 
-**Version**: 1.0.0  
+**Version**: 3.1.6  
 **Für**: MWG Schulprojektwoche 2026
